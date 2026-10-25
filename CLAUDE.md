@@ -5,10 +5,10 @@ Scan boarding pass → parse BCBP → match entry rule → handle guests → log
 This **started as a POC and is now the real application** heading to production on IsraJet's own on-prem machines. Treat it as a product, not a demo. The POC-era docs are kept as history only (see "Read first").
 
 ## Two repos (read this first)
-JetLog lives in two sibling folders, and the session runs in **`jetlog/`** with **`../jetlog-ops/`** added:
+JetLog lives in two sibling folders. Sessions start in the **IsraJet workspace root** (its `CLAUDE.md` imports this file); every path in the jetlog-ops files is written as seen from **inside `jetlog/`**:
 - **`jetlog/`** — IsraJet's code and its handover docs: `server/`, `client/`, `deploy/`, `.github/`, `README.md`, `docs/DEPLOY.md`, `docs/USER_GUIDE.md`. It belongs to the customer and will be transferred to IsraJet.
 - **`../jetlog-ops/`** — Mark's: this file, the agents and skills (`.claude/`), the plan and decision docs (`docs/`), the archive, the dev-style files, IsraJet's spec, and `dev-docs/`.
-- **Paths:** code paths and the two jetlog docs are written as they are (`server/…`, `docs/DEPLOY.md`); every ops file is written `../jetlog-ops/…`. Run commands from `jetlog/`.
+- **Paths:** code paths and the two jetlog docs are written as they are (`server/…`, `docs/DEPLOY.md`); every ops file is written `../jetlog-ops/…`. From the workspace root that means `jetlog/server/…` and `jetlog-ops/…`. Run app commands and app git from inside `jetlog/` (`cd jetlog` first).
 - **jetlog never mentions jetlog-ops** — no link, path, name, import or symlink, and no mention of agents, skills or Mark in its files. It is handed to the customer as it is. (jetlog-ops may link to jetlog.)
 - **Git:** code is committed in `jetlog/`; ops files with `git -C ../jetlog-ops`. Both repos use the **same branch names** (`main`, `staging`, `feature/*`). A change that touches both is committed with **`/commit`** (a paired commit: same branch, same message, the ops commit carrying `App-Commit: <sha>`). When an app branch merges into `staging`, merge the same-named ops branch into ops `staging` too.
 - **Git history is the source of truth.** Both repos start at the split (2026-10-25). For anything older, read **`../israjet-launges`** — the archive of the whole project before the split. It is **read-only: never modify it, never push to it.**

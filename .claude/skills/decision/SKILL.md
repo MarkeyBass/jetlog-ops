@@ -3,7 +3,7 @@ name: decision
 description: Record a scope or approach change in the living decision log — ../jetlog-ops/docs/DECISIONS.md — in the exact table format, with real reasoning. Use whenever a decision is made that changes scope, approach, stack, or conventions — the project workflow rules require logging these. Argument: the decision (and ideally the why).
 ---
 
-The log is the "Decisions in force" table in **`../jetlog-ops/docs/DECISIONS.md`** — append-only, one row per decision. `../jetlog-ops/docs/archive/POC_PHASES.md`'s decision log is **frozen and historical — never add to it.** The workflow rule in `../jetlog-ops/CLAUDE.md` makes logging mandatory for scope/approach changes. (The session runs in `jetlog/`; the decision docs live in `../jetlog-ops/`.)
+The log is the "Decisions in force" table in **`../jetlog-ops/docs/DECISIONS.md`** — append-only, one row per decision. `../jetlog-ops/docs/archive/POC_PHASES.md`'s decision log is **frozen and historical — never add to it.** The workflow rule in `../jetlog-ops/CLAUDE.md` makes logging mandatory for scope/approach changes. (Paths are written from inside `jetlog/`; from the workspace root, `../jetlog-ops/` is `jetlog-ops/`.)
 
 ## Steps
 

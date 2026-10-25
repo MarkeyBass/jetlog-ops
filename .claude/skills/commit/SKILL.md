@@ -3,7 +3,7 @@ name: commit
 description: Commit approved work as a paired commit across the two repos — the code in jetlog/, the matching ops docs (ARCHITECTURE, PLAN, DECISIONS, BACKLOG, agents, skills) in ../jetlog-ops/ — on the same branch, with the same message, the ops commit carrying `App-Commit: <full sha>`. Use ONLY when Mark says to commit ("commit", "commit it", "go"). Argument: the commit message (optional; otherwise propose one and wait for his OK).
 ---
 
-The session runs in `jetlog/`; the ops repo is `../jetlog-ops/`. This skill never runs on its own initiative — **only after Mark's explicit go** — and it **never pushes, never amends, never rebases**.
+Run every command below from inside `jetlog/` (`cd jetlog` first when the session starts in the workspace root); the ops repo is then `../jetlog-ops/`. This skill never runs on its own initiative — **only after Mark's explicit go** — and it **never pushes, never amends, never rebases**.
 
 ## Steps
 

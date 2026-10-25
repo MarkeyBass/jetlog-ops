@@ -3,7 +3,7 @@
 How Mark builds **this** project. It applies the global style (`MARK_DEVELOPMENT_STYLE_GLOBAL.md`, next to this file) to JetLog's tools, commands and documents. The hard safety rules are also in `CLAUDE.md`; where the two overlap, `CLAUDE.md` is the authority.
 
 ## Two repos (where this differs from the global style)
-JetLog is split in two (2026-10-25). The session runs in **`jetlog/`** — IsraJet's code and its handover docs (`README.md`, `docs/DEPLOY.md`, `docs/USER_GUIDE.md`). Everything else in the global layout lives in **`../jetlog-ops/`**: `CLAUDE.md`, `.claude/`, and `docs/` (`ARCHITECTURE.md`, `DECISIONS.md`, `PLAN.md`, `BACKLOG.md`, `dev-style/`, `client-israjet/`, `archive/`).
+JetLog is split in two (2026-10-25). Sessions start in the IsraJet workspace root, and paths here are written from inside **`jetlog/`** — IsraJet's code and its handover docs (`README.md`, `docs/DEPLOY.md`, `docs/USER_GUIDE.md`). Everything else in the global layout lives in **`../jetlog-ops/`**: `CLAUDE.md`, `.claude/`, and `docs/` (`ARCHITECTURE.md`, `DECISIONS.md`, `PLAN.md`, `BACKLOG.md`, `dev-style/`, `client-israjet/`, `archive/`).
 - Paths below are written from `jetlog/`.
 - **jetlog never mentions jetlog-ops**, the agents, the skills or Mark: it goes to the customer as it is.
 - Where the global style says "in the same commit" for a document that now lives in jetlog-ops, read **"in the paired commit"**: `/commit` commits the code in jetlog and the docs in jetlog-ops on the same branch, with the same message, the ops commit carrying `App-Commit: <sha>`.

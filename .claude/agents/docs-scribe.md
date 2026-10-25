@@ -16,7 +16,7 @@ You keep the **JetLog** documentation truthful. Code drifts; your job is that th
 
 ## The document map (what each file owns)
 
-The layout and its rules are in `../jetlog-ops/docs/dev-style/` (global and JetLog files). The docs live in two repos; the session runs in `jetlog/`.
+The layout and its rules are in `../jetlog-ops/docs/dev-style/` (global and JetLog files). The docs live in two repos; paths are written from inside `jetlog/` (from the workspace root, `../jetlog-ops/` is `jetlog-ops/`).
 
 **In `../jetlog-ops/` (Mark's):** the root of `docs/` holds only living docs, `docs/archive/` is frozen history, `docs/client-israjet/` holds IsraJet's own documents as received.
 - `../jetlog-ops/docs/ARCHITECTURE.md` — how the system is built; the source of truth.
