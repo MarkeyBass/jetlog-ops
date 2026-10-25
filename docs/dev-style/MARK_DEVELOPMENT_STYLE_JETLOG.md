@@ -33,7 +33,7 @@ The layout follows the global style's §6, split across the two repos as above:
   (choose the name yourself, so the command has no placeholder left).
 - Hand-edit the generated SQL in `server/src/db/migrations/` only for a backfill or seed, and verify it matches the TypeScript (e.g. compare keys on `jetlog_test`).
 - Give Mark `npm run db:migrate`, with `psql "postgres://jetlog:jetlog@localhost:5432/jetlog" -c "…"` row-count checks before and after.
-- Integration tests: `npm run test:integration`, which runs only against `jetlog_test`. Never against the dev DB `jetlog`, and never against production.
+- Integration tests: `npm run test:integration`, which runs only against `jetlog_test`. Never against the dev DB `jetlog`, and never against production. It skips the slow suites (`slowIntegrationSuite`, e.g. the 500,000-entry export limit), as CI does; `npm run test:integration:all` runs them too, locally.
 
 ## Tests and quality
 - Server: Vitest. Domain code under `server/src/domain/` is pure and written test-first; integration suites live in `server/tests/integration/`.
