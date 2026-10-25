@@ -17,7 +17,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 2 | **34** The look: theme tokens, light/dark, the app frame | Done (PR #38) |
 | 3 | **35** Hebrew and RTL foundation (absorbs task 17) | Done (PR #39) |
 | 4 | **36** The desk: scan-first page, operator log, scan modals | Done (PR #40) |
-| 5 | **44** The database server: its own repository and secure access | Next |
+| 5 | **44** The database server: use IsraJet's PostgreSQL 16 as it is | In progress |
 | 6 | **15** Authentication, roles and stations | Next |
 | 7 | **16** What is left of the admin panel: users | Next |
 | 8 | **18** Production deployment (the app server) | Next |
@@ -193,20 +193,20 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Decided:** §2 and task 35's decisions. Fill in the Hebrew of every key in `i18n/he.pending.json` (drafts, marked as task 35 marks them), then delete that list, so the key test becomes strict parity between `he.json` and `en.json`.
 **Done when:** every admin page reads correctly in Hebrew, `he.pending.json` is gone, and the key test checks strict parity.
 
-### 44. The database server: its own repository and secure access (medium, deployment) — after 36
-**Status:** Next
-**Why:** Mark (2026-10-25). The database runs on its own server (the DB VM) and the app on the other. The database comes first, set up and secured, before authentication and the rest of the work; the full app deployment stays task 18.
+### 44. The database server: use IsraJet's PostgreSQL 16 as it is (small, deployment) — after 36
+**Status:** In progress (`feature/task-44-israjet-postgres`)
+**Why:** Mark (2026-10-25). The database runs on its own server (the DB VM) and the app on the other. The database comes first, before authentication and the rest of the work; the full app deployment stays task 18.
+**Found on the DB VM (2026-10-26):** IsraJet's own native PostgreSQL **16.15** (Ubuntu, pgdg; cluster `16/main`) listens on `127.0.0.1`, `192.168.1.1` and `[::1]` port 5432, with TLS on. It has a login `appuser` (not a superuser, no Create DB) that owns an **empty** database `appdb` (no tables), and the superuser `postgres`. Docker is not installed there. The DB VM is reached through the app VM: SSH to `192.168.0.1`, then `ssh root@192.168.1.1` or `psql -h 192.168.1.1` from there; SSH from the laptop straight to `192.168.1.1` is refused.
 **Decided:**
-- **Its own repository**: the DB VM's Docker Compose file with Postgres only (what `deploy/db/` holds today), its runbook and its env template. No secret in git.
-- **Secure access**, from the recommendations (each confirmed in the task's plan):
-  - **Two database roles:** an owner/migrator role that runs `db:migrate`, and a runtime role for the API with only the rights it needs, never a superuser (moved here from task 18).
-  - **`scram-sha-256` passwords**, and `pg_hba.conf` letting only the app VM's address in.
-  - **A firewall** opening port 5432 only to the app VM.
-  - **TLS on the connection** (`sslmode=verify-full`), even inside the VPN.
-  - **Secrets in an env file or Docker secrets** (`POSTGRES_PASSWORD_FILE`), never in git, like `.env.prod` today.
-- Mark runs every command on the server himself (CLAUDE.md, production rules).
-**Still open:** what stays in this repository (`deploy/db/`, the DB parts of DEPLOY.md) and how the two repositories point at each other; how TLS certificates are issued and renewed; who rotates the passwords.
-**Done when:** the DB VM runs from the new repository; the API connects with the runtime role over TLS, and only from the app VM; the migrator role runs `db:migrate`; DEPLOY.md and the new repository's runbook agree.
+- **We don't touch IsraJet's database server** (Mark, 2026-10-26): no Docker, no upgrade, no new roles or passwords, no TLS, firewall or `pg_hba.conf` changes. Their DBA owns it (Mark doesn't talk to the DBA; his client does).
+- **JetLog uses `appdb` as `appuser`** with the password IsraJet gave. `appuser` can't create a database, and doesn't need to: it owns `appdb`, so the migrations can create the tables there.
+- **PostgreSQL 16 is fine for now**; upgrading to 17 is the DBA's call. JetLog's SQL uses nothing that needs 17.
+- **No `jetlog-db` repository for now** (Mark, 2026-10-26): the Postgres-17 compose planned there isn't needed while IsraJet's server is used. Nothing moves out of `jetlog`; `deploy/db/` stays, unused.
+- **The app VM runs `docker-compose.yml` with its `pg` service and volume commented out** (Mark, 2026-10-26; no separate prod compose): `DATABASE_URL` from `.env.prod`, migrate on start, the one-time seed and `db:lock` by hand with `docker compose run --rm api …`. The code reaches the app VM by `git archive` over SSH. A plain connection (no TLS): IsraJet's server accepts it. Docs kept short.
+- **The new jetlog replaces the old demo on the app VM, and the old one is removed** (Mark, 2026-10-26): its containers, images, volume and folder, once the new app runs.
+- Separate owner and runtime roles, password rotation, TLS certificates and the firewall are the DBA's and IT's, or a later task.
+- Mark runs every command on the servers himself (CLAUDE.md, production rules).
+**Done when:** the app VM runs this jetlog from `docker-compose.yml`, connected to `appdb`; `db:migrate` and the one-time seed have run there (DEPLOY.md, rewritten for IsraJet's server); the old demo stack and its traces are gone from the app VM.
 
 ### 15. Authentication, roles and stations (large) — after 44
 **Status:** Next
