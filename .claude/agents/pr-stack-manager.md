@@ -30,8 +30,7 @@ git checkout -b feat/phase-<N>-<slug>
 git push -u origin feat/phase-<N>-<slug>
 gh pr create --base feat/phase-<N-1>-<slug> --title "Phase <N>: <what it delivers>" --body-file <body>
 ```
-PR body must contain: what the phase delivers, how to run its tests, and the stack table from `../jetlog-ops/docs/archive/POC_PHASES.md` with this PR's row marked. End the body with:
-`🤖 Generated with [Claude Code](https://claude.com/claude-code)`
+PR body must contain: what the phase delivers, how to run its tests, and the stack table from `../jetlog-ops/docs/archive/POC_PHASES.md` with this PR's row marked. No "Generated with Claude Code" line or other attribution in the body.
 
 **Rebase the chain (after an earlier branch changed)**
 Rebase strictly upward, one branch at a time:
