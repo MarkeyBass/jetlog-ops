@@ -17,7 +17,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 2 | **34** The look: theme tokens, light/dark, the app frame | Done (PR #38) |
 | 3 | **35** Hebrew and RTL foundation (absorbs task 17) | Done (PR #39) |
 | 4 | **36** The desk: scan-first page, operator log, scan modals | Done (PR #40) |
-| 5 | **44** The database server: use IsraJet's PostgreSQL 16 as it is | In progress |
+| 5 | **44** The database server: use IsraJet's PostgreSQL 16 as it is | Done (PR #1, PR #3) |
 | 6 | **15** Authentication, roles and stations | Next |
 | 7 | **16** What is left of the admin panel: users | Next |
 | 8 | **18** Production deployment (the app server) | Next |
@@ -194,7 +194,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Done when:** every admin page reads correctly in Hebrew, `he.pending.json` is gone, and the key test checks strict parity.
 
 ### 44. The database server: use IsraJet's PostgreSQL 16 as it is (small, deployment) — after 36
-**Status:** In progress (`feature/task-44-israjet-postgres`)
+**Status:** Done (PR #1, PR #3)
 **Why:** Mark (2026-10-25). The database runs on its own server (the DB VM) and the app on the other. The database comes first, before authentication and the rest of the work; the full app deployment stays task 18.
 **Found on the DB VM (2026-10-26):** IsraJet's own native PostgreSQL **16.15** (Ubuntu, pgdg; cluster `16/main`) listens on `127.0.0.1`, `192.168.1.1` and `[::1]` port 5432, with TLS on. It has a login `appuser` (not a superuser, no Create DB) that owns an **empty** database `appdb` (no tables), and the superuser `postgres`. Docker is not installed there. The DB VM is reached through the app VM: SSH to `192.168.0.1`, then `ssh root@192.168.1.1` or `psql -h 192.168.1.1` from there; SSH from the laptop straight to `192.168.1.1` is refused.
 **Decided:**
