@@ -29,6 +29,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 14 | **43** Hebrew for the admin pages | Next |
 | 15 | **42** The full user guide for the redesign | Next |
 | any time | **31** Length limits on every free-text column | Next |
+| any time | **45** Re-entry after a flight delay (already-entered pass) | In progress (feature/task-45-reentry) |
 
 **Order (Mark, 2026-10-23):** the role split first, then the redesign in small tasks so each diff can be followed, then authentication, then deployment and the guide. **31 can run at any point**: it is a server safety task that depends on neither the redesign nor login. Task 17 (Hebrew and RTL) is superseded by 35 and by the redesign tasks that build every screen RTL-ready.
 
@@ -245,6 +246,29 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 - **The limits:** club and lounge code 50, descriptions 2,000, approver name and company 200, global-rule value 1,000.
 **Touch:** server (`db/schema.ts`, the constants, validation in the clubs, lounges, approvers, global-rules and scan endpoints, integration tests); before migrating, a query per column confirms no existing value is longer than its limit. Client: `maxLength` on the matching fields. Docs: ARCHITECTURE, DEPLOY, CLAUDE.md, USER_GUIDE, a `/decision`.
 **Done when:** no chosen column accepts more than its limit, in the code or in the database, and an over-long value is refused with a clear message, writing nothing.
+
+### 45. Re-entry after a flight delay: a pass that already entered (small, one migration) — Mark to place in the order
+**Status:** In progress (feature/task-45-reentry) — server built, awaiting Mark's `db:generate`/`db:migrate` and review
+**Why:** Mark (2026-10-26). A flight can be delayed after the passenger has already been admitted and left the lounge; they then need to come back in, sometimes more than once. Today an approved pass is blocked on re-scan (`ALREADY_ENTERED`), with no way to let it back in. This adds a **re-entry**: a special exceptional approval for a pass that has already entered, usable as many times as needed. Keep it small — don't over-build it.
+
+**The rule it must not break:** dedup is "one APPROVED entry per pass" — `uniq_key` behind the partial unique index `entries_one_approved_per_uniq_key` (`where approved = true and uniq_key is not null`). A re-entry must not collide with the original approved entry, nor with earlier re-entries, nor let a plain second scan sneak an entry in.
+
+**Decided (Mark, 2026-10-26):**
+- **A re-entry is an exceptional approval that keeps the pass's real `uniq_key`.** It is logged as: `approved = true`, `is_exceptional = true`, `is_reentry = true`, the real `uniq_key` (not null), quantity 1, no guests. Keeping the key ties every re-entry to the original admission, so "every admission of this pass" is one query by `uniq_key` — no separate pointer (`reentry_of_entry_id`) needed.
+- **The dedup index is narrowed by one predicate so re-entries don't collide.** `entries_one_approved_per_uniq_key` becomes `where approved = true and uniq_key is not null and is_reentry = false`. The original approved entry stays the one deduped admission; re-entries (and earlier re-entries) fall outside the index, so any number coexist, while a plain second scan — `is_reentry = false` — is still blocked exactly as today. `approvedEntryWithKey` is ordered to prefer the original (non-re-entry) row.
+- **One new flag, `entries.is_reentry` (boolean, NOT NULL default false).** It marks the row as a second/third admission, keeps it out of the dedup index, drives its badge in the log, and lets the export and reports tell re-entries apart from ordinary manual approvals.
+- **Triggered from the scan result when the pass is already entered.** The operator re-scans the pass; the result shows `ALREADY_ENTERED`; a **Re-enter (flight delay)** action opens the exception form (approver required, notes optional), carrying the raw barcode so the row records the same flight and passenger. The server guards it: the pass must parse and an approved entry with its `uniq_key` must already exist, else 400 — a re-entry is only ever for a pass that already entered.
+- **Unlimited.** Each re-entry is a fresh row; nothing caps how many times an approved pass re-enters.
+
+**Still open (recommendation to confirm):**
+- **Ordering.** Independent of login (15) and the redesign (37–43): it needs only today's scan and exception code. Recommended: schedulable any time, like task 31; listed here as "Next" for Mark to slot.
+
+**Touch:**
+- **Server first:** `db/schema.ts` (`is_reentry`, and the narrowed `entries_one_approved_per_uniq_key` predicate), a migration adding the column and recreating the index (Mark runs `db:generate` / `db:migrate`; the index change drops and recreates it — check row counts before/after), a re-entry path in `exceptionApprovalService.ts` (keeps the real `uniq_key`, sets `is_reentry`) + its controller/route and the already-entered guard, the `approvedEntryWithKey` ordering, integration tests.
+- **Client:** the Re-enter action on the already-entered scan result, and its badge in the log.
+- **Docs:** USER_GUIDE (`user-guide-writer`), ARCHITECTURE (the data-model note: dedup is one approved *non-re-entry* per pass; re-entries are exceptional and keep the pass's `uniq_key`), DEPLOY.md (the migration + row counts), and a `/decision` (this extends "one approved entry per pass" to allow approver-authorised re-entries, excluded from dedup by `is_reentry`).
+
+**Done when:** an already-entered pass can be approved for re-entry by an approver, as many times as needed; each re-entry is logged, badged, distinguishable from a manual approval, and tied to the original by `uniq_key`; and a plain second scan (not a re-entry) is still blocked by the dedup index.
 
 ---
 
