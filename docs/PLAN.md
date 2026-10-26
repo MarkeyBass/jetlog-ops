@@ -29,7 +29,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 14 | **43** Hebrew for the admin pages | Next |
 | 15 | **42** The full user guide for the redesign | Next |
 | any time | **31** Length limits on every free-text column | Next |
-| any time | **45** Re-entry after a flight delay (already-entered pass) | In progress (feature/task-45-reentry) |
+| any time | **45** Re-entry after a flight delay (already-entered pass) | Done (PR #4) |
 
 **Order (Mark, 2026-10-23):** the role split first, then the redesign in small tasks so each diff can be followed, then authentication, then deployment and the guide. **31 can run at any point**: it is a server safety task that depends on neither the redesign nor login. Task 17 (Hebrew and RTL) is superseded by 35 and by the redesign tasks that build every screen RTL-ready.
 
@@ -248,7 +248,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Done when:** no chosen column accepts more than its limit, in the code or in the database, and an over-long value is refused with a clear message, writing nothing.
 
 ### 45. Re-entry after a flight delay: a pass that already entered (small, one migration) — Mark to place in the order
-**Status:** In progress (feature/task-45-reentry) — server built, awaiting Mark's `db:generate`/`db:migrate` and review
+**Status:** Done (PR #4)
 **Why:** Mark (2026-10-26). A flight can be delayed after the passenger has already been admitted and left the lounge; they then need to come back in, sometimes more than once. Today an approved pass is blocked on re-scan (`ALREADY_ENTERED`), with no way to let it back in. This adds a **re-entry**: a special exceptional approval for a pass that has already entered, usable as many times as needed. Keep it small — don't over-build it.
 
 **The rule it must not break:** dedup is "one APPROVED entry per pass" — `uniq_key` behind the partial unique index `entries_one_approved_per_uniq_key` (`where approved = true and uniq_key is not null`). A re-entry must not collide with the original approved entry, nor with earlier re-entries, nor let a plain second scan sneak an entry in.
