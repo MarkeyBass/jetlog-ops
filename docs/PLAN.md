@@ -18,7 +18,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 3 | **35** Hebrew and RTL foundation (absorbs task 17) | Done (PR #39) |
 | 4 | **36** The desk: scan-first page, operator log, scan modals | Done (PR #40) |
 | 5 | **44** The database server: use IsraJet's PostgreSQL 16 as it is | Done (PR #1, PR #3) |
-| 6 | **15** Login and roles: register, log in, the role decides the pages | In progress |
+| 6 | **15** Login and roles: register, log in, the role decides the pages | Done (PR #5) |
 | 7 | **16** What is left of the admin panel: users | Next |
 | 8 | **48** A maximum session length, with a warning before the logout | Next |
 | 9 | **46** Who did it: the user on every entry and change | Next |
@@ -215,7 +215,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Done when:** the app VM runs this jetlog from `docker-compose.yml`, connected to `appdb`; `db:migrate` and the one-time seed have run there (DEPLOY.md, rewritten for IsraJet's server); the old demo stack and its traces are gone from the app VM.
 
 ### 15. Login and roles: register, log in, the role decides the pages (medium) — after 44
-**Status:** In progress (`feature/task-15-auth`)
+**Status:** Done (PR #5)
 **Why:** everything is public. Production needs users and roles. Mark (2026-10-27): **start basic.** A register page and a login page; everyone who registers is an operator; Mark makes one of them admin in the database by hand. The admin sees the admin pages, the operator the operator's. The rest of the old task 15 (who did each entry, the station token) moves to tasks 46 and 47; managing users from the screen stays task 16.
 **Decided (Mark, 2026-10-27):**
 - **Local users** in a `users` table (`id`, `username` unique, `password_hash`, `role`, `active`, `created_at`). No SSO: the machines are on-prem.
