@@ -31,6 +31,9 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 16 | **41** Admin: Clubs, Lounges, Approvers, Global rules | Next |
 | 17 | **43** Hebrew for the admin pages | Next |
 | 18 | **42** The full user guide for the redesign | Next |
+| before the pen test | **49** Close the API's own port (8000) | Next |
+| before the pen test | **50** Fix the npm audit findings | Done (PR #6) |
+| before the pen test | **51** Containers as non-root; no version headers | Next |
 | any time | **31** Length limits on every free-text column | Next |
 | any time | **45** Re-entry after a flight delay (already-entered pass) | Done (PR #4) |
 
@@ -39,6 +42,8 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 **Order changed (Mark, 2026-10-25), after task 36:** the database server first (44, split out of 18), then authentication (15) and users (16), then the app server (18), and only then the rest of the redesign (37–41, 43) and the guide (42). Login replaces the View as switch and keeps the layout, so the screens built after it are not affected, and the days window (38) can be enforced by the server from the start. With the app server deployed by GitHub Actions before the remaining screens, every one of them is shipped through the pipeline, so the deployment is exercised many times before go-live instead of by hand. Why: DECISIONS.md, 2026-10-25.
 
 **Task 15 split (Mark, 2026-10-27):** authentication starts basic — register, log in, the role decides the pages and the admin endpoints (15). Who did each entry (46) and the station token (47) follow users (16), before the app server (18); a maximum session length with its warning (48, Mark, 2026-10-31) comes right after 16. Why: DECISIONS.md, 2026-10-27.
+
+**Security before the pen test (Mark, 2026-11-03):** IsraJet's IT received the security-review doc and will run `npm audit` and a penetration test. Tasks 49–51 close the gaps the doc lists as known, before IT gets the code; they are independent of each other and of the redesign.
 
 **How every task runs** (the full rules are in CLAUDE.md and the dev-style files): one task = one branch off `staging` = one PR. Plan first and wait for Mark's OK. Server first, then client, with a review stop after each. Store changes go through `store-test-writer`, user-visible changes through `user-guide-writer`, DEPLOY.md changes in the same commit and ARCHITECTURE.md in the paired ops commit (`/commit`) when the task touches them. Mark runs `db:generate` and `db:migrate` himself. `/verify` before handing over. Commit only after his go.
 
@@ -270,6 +275,27 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Why:** the guide is kept current by every task, but the redesign changes every screen. This task brings it together: the screenshots from the shot list on the new screens, the Hebrew version of the guide, and possibly the planned in-app help page.
 **Still open:** whether the in-app help page is part of this task or its own; who translates the guide into Hebrew.
 **Done when:** the guide and its screenshots match the redesigned app, in English and Hebrew.
+
+### 49. Close the API's own port (8000) (small, deployment) — before the pen test
+**Status:** Next
+**Why:** `docker-compose.yml` publishes the API on port 8000 of the app server, beside nginx on 3000. nginx reaches the API over Docker's internal network, so the published port only adds a second way in, past nginx. A host firewall rule would not close it: Docker writes its own iptables rules for published ports, which bypass `ufw`.
+**Decided (Mark, 2026-11-03):** remove the API's `ports` from `docker-compose.yml`; nginx stays the only entry point. The security-review doc says it "will be closed".
+**Touch:** `docker-compose.yml`; `docs/DEPLOY.md` (every health check already goes through `:3000/api/health`; check nothing calls `:8000`); the review doc's diagram, ports table and known-limits row once done. A redeploy on the app server (Mark).
+**Done when:** `curl http://192.168.0.1:8000/api/health` from the VPN fails, and the app on `:3000` works.
+
+### 50. Fix the npm audit findings (small) — before the pen test
+**Status:** Done (PR #6)
+**Why:** on 2026-11-03, `npm audit --omit=dev` reported 4 in `server/` (critical `proxy-addr`, high `body-parser` and `multer`, moderate `qs`; all through Express and multer) and 2 high in `client/` build tools (`vite`, `source-map-js`). IT's first audit should come back clean. Mark started on it (2026-11-03).
+**Decided:** `npm audit fix` in both projects (no `--force`: no major-version jumps without a look); the full gate after; anything left is listed with why.
+**Touch:** `server/package-lock.json`, `client/package-lock.json` (and `package.json` only if a range must move). Optional in the same task: the export's `drain`/`close` waits leave a listener behind on each wait (`controllers/entries.ts`; the `MaxListenersExceededWarning` in the 500,000-row test).
+**Done when:** `npm audit --omit=dev` reports 0 in both projects (or each remaining finding is explained), and `/verify` passes.
+
+### 51. Containers as non-root; no version headers (small) — before the pen test
+**Status:** Next
+**Why:** two findings a pen test reports, both listed as known in the security-review doc: the API container runs as root (`server/Dockerfile` has no `USER`), and the responses name their software (Express's `X-Powered-By`, nginx's version in `Server`).
+**Decided (Mark, 2026-11-03):** one task for both. The API image runs as the image's `node` user; Express's `x-powered-by` is turned off; nginx gets `server_tokens off`.
+**Touch:** `server/Dockerfile`, `server/src/app.ts`, `client/nginx.conf`; a test that the header is gone; DEPLOY.md if a rebuild step changes.
+**Done when:** `docker compose exec api whoami` is not root, and no response carries `X-Powered-By` or an nginx version.
 
 ### 31. Length limits on every free-text column (small–medium, one migration) — any time
 **Status:** Next
