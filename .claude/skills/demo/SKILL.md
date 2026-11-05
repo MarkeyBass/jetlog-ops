@@ -3,7 +3,7 @@ name: demo
 description: Bring up the full JetLog demo (Postgres + API + operator UI) with one docker compose command, wait for health, and hand the user a smoke-test script with a real fixture barcode. Use for "run the demo", "start the app", "show it to the partner".
 ---
 
-The demo stack is the root `docker-compose.yml`: `pg` (Postgres 16) → `api` (migrates + seeds on start, port 8000) → `web` (nginx, port 3000).
+The demo stack is the root `docker-compose.yml`: `pg` (Postgres 18.6, commented out by default: uncomment it for a local demo) → `api` (migrates + seeds on start, port 8000) → `web` (nginx, port 3000).
 
 ## Steps
 

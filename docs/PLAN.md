@@ -202,6 +202,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 ### 44. The database server: use IsraJet's PostgreSQL 16 as it is (small, deployment) — after 36
 **Status:** Done (PR #1, PR #3)
 **Why:** Mark (2026-10-25). The database runs on its own server (the DB VM) and the app on the other. The database comes first, before authentication and the rest of the work; the full app deployment stays task 18.
+**Since 2026-11-02 the DB VM runs PostgreSQL 18.6** (Mark upgraded it; DECISIONS.md, 2026-11-01 and 2026-11-02). The rest of this task is kept as it was.
 **Found on the DB VM (2026-10-26):** IsraJet's own native PostgreSQL **16.15** (Ubuntu, pgdg; cluster `16/main`) listens on `127.0.0.1`, `192.168.1.1` and `[::1]` port 5432, with TLS on. It has a login `appuser` (not a superuser, no Create DB) that owns an **empty** database `appdb` (no tables), and the superuser `postgres`. Docker is not installed there. The DB VM is reached through the app VM: SSH to `192.168.0.1`, then `ssh root@192.168.1.1` or `psql -h 192.168.1.1` from there; SSH from the laptop straight to `192.168.1.1` is refused.
 **Decided:**
 - **We don't touch IsraJet's database server** (Mark, 2026-10-26): no Docker, no upgrade, no new roles or passwords, no TLS, firewall or `pg_hba.conf` changes. Their DBA owns it (Mark doesn't talk to the DBA; his client does).
