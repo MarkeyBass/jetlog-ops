@@ -19,7 +19,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 4 | **36** The desk: scan-first page, operator log, scan modals | Done (PR #40) |
 | 5 | **44** The database server: use IsraJet's PostgreSQL 16 as it is | Done (PR #1, PR #3) |
 | 6 | **15** Login and roles: register, log in, the role decides the pages | Done (PR #5) |
-| 7 | **16** What is left of the admin panel: users | In progress (`feature/task-16-users`) |
+| 7 | **16** What is left of the admin panel: users | Done (PR #7) |
 | 8 | **48** A maximum session length, with a warning before the logout | Next |
 | 9 | **46** Who did it: the user on every entry and change | Next |
 | 10 | **47** Stations: the admin sets each computer's lounge | Next |
