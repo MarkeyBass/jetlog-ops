@@ -260,7 +260,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Done when:** a station's lounge comes from its token; a computer without one can't log scans; an admin can revoke a station.
 
 ### 16. What is left of the admin panel: users (medium) — after 15
-**Status:** In progress (`feature/task-16-users`)
+**Status:** Done (PR #7)
 **Why:** the redesign builds the admin pages (39–41), so what remains of the old admin-panel task is managing users and their roles. Task 15 makes the first admin by hand in the database; this task makes that unnecessary.
 **Decided:** a Users page (list, create, edit role, deactivate, reset a password) behind the admin role. **Open registration closes** (Mark, 2026-10-27: it is open only in task 15's basic start): an admin creates the accounts, or approves the registered ones (to settle when planned). `react-router` was the old plan's idea for the admin area; the tabs work without it, so adding it needs a reason and a `/decision`.
 **Decided (Mark, 2026-11-07):**
