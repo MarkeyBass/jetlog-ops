@@ -18,22 +18,27 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 3 | **35** Hebrew and RTL foundation (absorbs task 17) | Done (PR #39) |
 | 4 | **36** The desk: scan-first page, operator log, scan modals | Done (PR #40) |
 | 5 | **44** The database server: use IsraJet's PostgreSQL 16 as it is | Done (PR #1, PR #3) |
-| 6 | **15** Authentication, roles and stations | Next |
+| 6 | **15** Login and roles: register, log in, the role decides the pages | Done (PR #5) |
 | 7 | **16** What is left of the admin panel: users | Next |
-| 8 | **18** Production deployment (the app server) | Next |
-| 9 | **37** Entry details and the change panels | Next |
-| 10 | **38** The days-of-entries global rule and the operator's log window | Next |
-| 11 | **39** Admin: All entries | Next |
-| 12 | **40** Admin: Rules | Next |
-| 13 | **41** Admin: Clubs, Lounges, Approvers, Global rules | Next |
-| 14 | **43** Hebrew for the admin pages | Next |
-| 15 | **42** The full user guide for the redesign | Next |
+| 8 | **48** A maximum session length, with a warning before the logout | Next |
+| 9 | **46** Who did it: the user on every entry and change | Next |
+| 10 | **47** Stations: the admin sets each computer's lounge | Next |
+| 11 | **18** Production deployment (the app server) | Next |
+| 12 | **37** Entry details and the change panels | Next |
+| 13 | **38** The days-of-entries global rule and the operator's log window | Next |
+| 14 | **39** Admin: All entries | Next |
+| 15 | **40** Admin: Rules | Next |
+| 16 | **41** Admin: Clubs, Lounges, Approvers, Global rules | Next |
+| 17 | **43** Hebrew for the admin pages | Next |
+| 18 | **42** The full user guide for the redesign | Next |
 | any time | **31** Length limits on every free-text column | Next |
 | any time | **45** Re-entry after a flight delay (already-entered pass) | Done (PR #4) |
 
 **Order (Mark, 2026-10-23):** the role split first, then the redesign in small tasks so each diff can be followed, then authentication, then deployment and the guide. **31 can run at any point**: it is a server safety task that depends on neither the redesign nor login. Task 17 (Hebrew and RTL) is superseded by 35 and by the redesign tasks that build every screen RTL-ready.
 
 **Order changed (Mark, 2026-10-25), after task 36:** the database server first (44, split out of 18), then authentication (15) and users (16), then the app server (18), and only then the rest of the redesign (37–41, 43) and the guide (42). Login replaces the View as switch and keeps the layout, so the screens built after it are not affected, and the days window (38) can be enforced by the server from the start. With the app server deployed by GitHub Actions before the remaining screens, every one of them is shipped through the pipeline, so the deployment is exercised many times before go-live instead of by hand. Why: DECISIONS.md, 2026-10-25.
+
+**Task 15 split (Mark, 2026-10-27):** authentication starts basic — register, log in, the role decides the pages and the admin endpoints (15). Who did each entry (46) and the station token (47) follow users (16), before the app server (18); a maximum session length with its warning (48, Mark, 2026-10-31) comes right after 16. Why: DECISIONS.md, 2026-10-27.
 
 **How every task runs** (the full rules are in CLAUDE.md and the dev-style files): one task = one branch off `staging` = one PR. Plan first and wait for Mark's OK. Server first, then client, with a review stop after each. Store changes go through `store-test-writer`, user-visible changes through `user-guide-writer`, DEPLOY.md changes in the same commit and ARCHITECTURE.md in the paired ops commit (`/commit`) when the task touches them. Mark runs `db:generate` and `db:migrate` himself. `/verify` before handing over. Commit only after his go.
 
@@ -54,7 +59,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 - **Kept from task 32:** every scan and every action opens in a modal, one at a time. A USB scan always lands in the scan field the user can see. Forms that change data submit only from their button. The modal footer has the secondary actions (grey) on one side and the one main action (blue) on the other. ~~In Hebrew the footer mirrors, so the main action sits on the left.~~ Superseded in task 35 (Mark, 2026-10-24): nothing mirrors in Hebrew, so the main action stays on the right.
 - **Clear status at a glance:** approved and denied as colour-coded badges, ⚡ exceptional in its own purple (never a warning colour: it was approved), every deny reason listed.
 - **shadcn + Tailwind only**, never MUI. Colours, fonts and spacing are tokens (34), so later changes to the look stay token changes.
-- **The station lounge picker stays as it is** until task 15. Later an admin sets each computer's lounge in a station-setup window, and the operator's badge becomes read-only.
+- **The station lounge picker stays as it is** until task 47. Later an admin sets each computer's lounge in a station-setup window, and the operator's badge becomes read-only.
 
 ---
 
@@ -209,23 +214,52 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 - Mark runs every command on the servers himself (CLAUDE.md, production rules).
 **Done when:** the app VM runs this jetlog from `docker-compose.yml`, connected to `appdb`; `db:migrate` and the one-time seed have run there (DEPLOY.md, rewritten for IsraJet's server); the old demo stack and its traces are gone from the app VM.
 
-### 15. Authentication, roles and stations (large) — after 44
+### 15. Login and roles: register, log in, the role decides the pages (medium) — after 44
+**Status:** Done (PR #5)
+**Why:** everything is public. Production needs users and roles. Mark (2026-10-27): **start basic.** A register page and a login page; everyone who registers is an operator; Mark makes one of them admin in the database by hand. The admin sees the admin pages, the operator the operator's. The rest of the old task 15 (who did each entry, the station token) moves to tasks 46 and 47; managing users from the screen stays task 16.
+**Decided (Mark, 2026-10-27):**
+- **Local users** in a `users` table (`id`, `username` unique, `password_hash`, `role`, `active`, `created_at`). No SSO: the machines are on-prem.
+- **Usernames, not emails** (no mail on-prem): trimmed and lower-cased, 3–50 characters of `a-z 0-9 . _ -`. **Passwords** 8–72 characters (bcrypt reads at most 72 bytes; a longer one is refused, never cut short).
+- **Two roles, `operator` and `admin`**, one vocabulary in `domain/auth.ts`, the same names as the client's `lib/role.ts`; the database checks the column holds one of them, so a typo in a hand-written `UPDATE` fails instead of locking someone out. No third role for now.
+- **Register is open and always creates an operator**; it logs the new user in. **An admin is made by hand in the database** (`UPDATE users SET role = 'admin' WHERE username = '…'`), until task 16 gives the admin a Users page. Open registration means anyone who can reach the app can make an operator account; task 16 closes it.
+- **Passwords hashed with bcrypt** (`bcryptjs`, pure JavaScript: no native build in the Docker image), cost 12. A login with an unknown username costs the same time as a wrong password, and both get the same message.
+- **Sessions in the database** (`sessions`: `user_id`, the SHA-256 of a random token, `expires_at`), the token in an **httpOnly, `SameSite=Lax` cookie**. Logout deletes the row; the user and role are read on every request, so a role changed in the database applies on the next request and a deactivated user is out at once. No secret to add to `.env.prod`. ~~A session lasts 12 hours from login (a desk shift).~~ **A session ends after a day without use** (Mark, 2026-10-31): every use renews it (at most once an hour), so a desk in use is never logged out in the middle of a scan; the cookie lasts a year and the database decides. No `Secure` flag while the app is served over plain HTTP inside the VPN; it comes with TLS (IT's).
+- **API:** `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`. **Every other `/api/*` route except `/api/health` needs a session (401).**
+- **The server checks the role now (Mark, 2026-10-27):** an operator gets **403** on what only the admin's pages use: every `/api/rules` route, the writes of lounges, clubs (and the club image), approvers and global rules, and `GET /api/entries/export`. The operator keeps everything the desk uses: scanning, exceptions, re-entry, the log, an entry's details and changes, and the reads of lounges, clubs, approvers and global rules.
+- **The client:** a login page and a register page before anything else; the role comes from `GET /api/auth/me` and **replaces the View as switch**, keeping today's layout per role; the header shows the user and a Log out button; a 401 from any call goes back to the login page. The station's lounge picker stays as it is (task 47).
+**Touch:** server: `db/schema.ts` (`users`, `sessions`), one migration (Mark runs `db:generate` / `db:migrate`), `domain/auth.ts` (test-first), `services/authService.ts`, `middleware/auth.ts` (`requireAuth`, `requireRole`), `routes/auth.ts` + `controllers/auth.ts`, the admin-only routes, integration tests (every suite logs in). Client: login and register pages, the role from `/me`, 401 handling, store changes through `store-test-writer`, the guide through `user-guide-writer`. Docs: ARCHITECTURE, CLAUDE.md, DEPLOY.md (the migration, making the first admin), a `/decision`.
+**Done when:** an unauthenticated request to any `/api/*` except `/health` and the auth routes is a 401; anyone can register and log in as an operator; a user Mark makes admin sees the admin pages; an operator can't reach an admin page and gets 403 from the admin endpoints.
+
+### 48. A maximum session length, with a warning before the logout (small–medium, one migration) — after 16
 **Status:** Next
-**Why:** everything is public. Production needs users, roles, and a lounge per computer that the server can trust.
-**Decided:**
-- Login replaces 33's **View as** switch and keeps the layout. The server enforces the roles: an operator can't export or open admin endpoints, and the days window (38) is applied by the server, not only the screen (BACKLOG.md, 2026-10-21).
-- **The station model** (Mark, 2026-10-23): an admin sets each computer's lounge in a station-setup window. It is stored on that computer as a token the server checks, and the operator's lounge badge becomes read-only.
-- From the post-POC plan: `users (id, username, password_hash, role, active)` with bcrypt or argon2; a login endpoint issuing an httpOnly-cookie session or a JWT; `requireAuth` / `requireRole` middleware; `user_id` recorded on entries (who scanned) and on exceptional approvals (who logged it, distinct from `approver_name`, who authorised it); a login screen and 401 handling in `api/client.ts`.
-**Still open:** the identity source (a local users table vs IsraJet's SSO; on-prem suggests local first); whether a third role (the old plan's `manager`, for rules and approvers) is needed; how the station token is issued and revoked.
-**Done when:** an unauthenticated request to any `/api/*` except `/health` and login is a 401; an operator can't reach an admin page or endpoint; every new entry records who created it; a station's lounge comes from its token.
+**Why:** Mark (2026-10-31). Task 15 ends a session only after a day without use, so a working desk is never logged out, but a session in daily use never ends either, and its cookie lasts a year. A fixed maximum (a forced re-login every few days) limits how long a copied cookie works. It must never break a scan, so the desk is warned ahead and re-logs in at a moment it chooses.
+**Decided (Mark, 2026-10-31):**
+- **Two limits:** the day-without-use limit stays as it is, and every session also ends a fixed time after login, used or not (`sessions.max_expires_at`, set at login and never renewed). The cookie lasts as long as that maximum, not a year.
+- **A warning before the fixed end:** `GET /api/auth/me` (and login) returns when the session ends; the client keeps a timer and, shortly before, opens a pop-up ("You'll be logged out at 14:00") with **Log in again now**, which asks for the password in the pop-up itself and keeps the screen and any scan in progress.
+**Still open:** the maximum (recommended: 7 days) and when the warning opens (recommended: 30 minutes before, again at 5); whether the maximum is an admin setting (a global rule) or a constant (recommended: a constant until IsraJet asks); what the pop-up does if it is ignored (recommended: the logout happens, and the login page keeps the operator's lounge).
+**Done when:** a session ends at its maximum even while in use, the desk is warned before it, and re-logging in from the warning loses nothing on screen.
+
+### 46. Who did it: the user on every entry and change (small–medium, one migration) — after 16
+**Status:** Next
+**Why:** carried from the old task 15: once people log in, each entry should say who logged it.
+**Decided (from the post-POC plan):** `entries.created_by_user_id` (→ `users.id`, who scanned), set by the server from the session on every scan, guest, exception and re-entry; the user on an exceptional approval is who logged it, distinct from `approver_name` (who authorised it). Shown in the entry details and the export.
+**Still open:** whether a modification in place (move, rescan, void, quantity) also records its user (`modified_by_user_id`), or that waits for an audit trail.
+**Done when:** every new entry records who created it, and the details and the export show it.
+
+### 47. Stations: the admin sets each computer's lounge (medium) — after 46
+**Status:** Next
+**Why:** the lounge a scan is logged in comes from the browser today (`loungeId` in every request), so any computer can claim any lounge. The server should trust a station, not the browser.
+**Decided (Mark, 2026-10-23, 2026-10-27):** an admin opens a station-setup window on the computer and picks its lounge; the server issues a **station token** stored on that computer (`localStorage`), checked on every scan and exception; the server takes the lounge from the token, not from the request, and the operator's lounge badge becomes read-only.
+**Still open:** a `stations` table (name, lounge, token hash, active, last seen) so the admin can list and revoke them, or a signed token with no table; whether an operator can log in on a computer that has no station yet (recommended: yes, scanning refused until an admin sets it up).
+**Done when:** a station's lounge comes from its token; a computer without one can't log scans; an admin can revoke a station.
 
 ### 16. What is left of the admin panel: users (medium) — after 15
 **Status:** Next
-**Why:** the redesign builds the admin pages (39–41), so what remains of the old admin-panel task is managing users and their roles.
-**Decided:** a Users page (list, create, edit role, deactivate) behind the admin role. `react-router` was the old plan's idea for the admin area; the tabs work without it, so adding it needs a reason and a `/decision`.
+**Why:** the redesign builds the admin pages (39–41), so what remains of the old admin-panel task is managing users and their roles. Task 15 makes the first admin by hand in the database; this task makes that unnecessary.
+**Decided:** a Users page (list, create, edit role, deactivate, reset a password) behind the admin role. **Open registration closes** (Mark, 2026-10-27: it is open only in task 15's basic start): an admin creates the accounts, or approves the registered ones (to settle when planned). `react-router` was the old plan's idea for the admin area; the tabs work without it, so adding it needs a reason and a `/decision`.
 **Done when:** an admin manages users without touching SQL, and operators never see the page.
 
-### 18. Production deployment to the on-prem machines: the app server (large) — after 16
+### 18. Production deployment to the on-prem machines: the app server (large) — after 47
 **Status:** Next
 **Decided (carried over):** one compose file per VM. The DB VM is task 44 (its own repository, its roles and secure access); this task is the app VM, connecting with the runtime role task 44 creates. This task adds the app VM's `deploy/app/docker-compose.app.yml` (`api` + `web`, no `pg`, `DATABASE_URL` to `192.168.1.1:5432` from an env file not in git, pinned image tags, `restart: unless-stopped`, log rotation, nginx serving the client and proxying `/api`), retires the demo compose and its seed-on-start on APP.Layam, adds a GitHub Actions job over the VPN (Mark, 2026-10-25: the remaining screens, 37 on, are shipped through it, so it is tested many times before go-live) that runs `db:migrate` before switching traffic and can roll back to the previous tag, and a smoke check after deploy. A test deployment already runs; DEPLOY.md should record it. Backups are the DBA's (DEPLOY.md §Backups).
 **Done when:** a fresh app VM goes from zero to serving with one command, and a rollback is one command.
