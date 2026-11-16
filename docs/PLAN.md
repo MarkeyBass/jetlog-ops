@@ -19,7 +19,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 4 | **36** The desk: scan-first page, operator log, scan modals | Done (PR #40) |
 | 5 | **44** The database server: use IsraJet's PostgreSQL 16 as it is | Done (PR #1, PR #3) |
 | 6 | **15** Login and roles: register, log in, the role decides the pages | Done (PR #5) |
-| 7 | **16** What is left of the admin panel: users | Next |
+| 7 | **16** What is left of the admin panel: users | Done (PR #7) |
 | 8 | **48** A maximum session length, with a warning before the logout | Next |
 | 9 | **46** Who did it: the user on every entry and change | Next |
 | 10 | **47** Stations: the admin sets each computer's lounge | Next |
@@ -260,9 +260,17 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Done when:** a station's lounge comes from its token; a computer without one can't log scans; an admin can revoke a station.
 
 ### 16. What is left of the admin panel: users (medium) — after 15
-**Status:** Next
+**Status:** Done (PR #7)
 **Why:** the redesign builds the admin pages (39–41), so what remains of the old admin-panel task is managing users and their roles. Task 15 makes the first admin by hand in the database; this task makes that unnecessary.
 **Decided:** a Users page (list, create, edit role, deactivate, reset a password) behind the admin role. **Open registration closes** (Mark, 2026-10-27: it is open only in task 15's basic start): an admin creates the accounts, or approves the registered ones (to settle when planned). `react-router` was the old plan's idea for the admin area; the tabs work without it, so adding it needs a reason and a `/decision`.
+**Decided (Mark, 2026-11-07):**
+- **The admin creates every account**, choosing its role (admin or operator), and can change any other user's role, deactivate and reactivate them, and reset their password. **Registration closes:** the Create an account page and `POST /api/auth/register` go.
+- **The first admin comes from a server script** Mark runs once on the app VM: `npm run user:create-admin -- --username <name>`, which asks for the password twice without showing it (never on the command line, so it stays out of the shell history). It creates a new active admin and refuses a username that exists, so it never changes an account; after a lost admin password, it makes another admin, who resets the first one on the Users page. Not "the first account registered becomes admin": whoever reached the page first would get admin.
+- **Everyone changes their own password** (both roles), giving the current one first; a wrong current password is a 400 (not a 401, which would log the desk out). It ends the user's other sessions and keeps the one in use.
+- **An admin never changes their own account from the Users page:** not their role, not deactivated, not a password reset (they use Change password, which asks for the current one). So the admin doing the work stays an active admin, and there is always at least one.
+- **A reset password or a deactivation logs that user out at once** (their sessions are deleted). A role change keeps the sessions: the role is read on every request.
+- **No forced change after a reset** (backlog): the admin sets a password and tells the user, who may change it. **An admin renames another user** (Mark, 2026-11-16, moved in from the backlog; first "usernames are not editable"): `username` in `PATCH /api/users/:id`, with the rules of a new username and a 409 when another user has it, active or not. Never their own, like every other change on the Users page; nobody renames themselves. The renamed user stays logged in (a session points at the id) and logs in with the new name from then on. **Users are never deleted**, only deactivated (task 46 will link entries to users). A username that exists, active or not, can't be created again (409); a deactivated one is reactivated instead.
+- **API:** `POST /api/auth/password` (logged in) · `GET /api/users` · `POST /api/users` · `PATCH /api/users/:id` (`role`, `active`) · `POST /api/users/:id/password` — the `/api/users` routes admin only (403). No migration: `users` already has every column.
 **Done when:** an admin manages users without touching SQL, and operators never see the page.
 
 ### 18. Production deployment to the on-prem machines: the app server (large) — after 47
