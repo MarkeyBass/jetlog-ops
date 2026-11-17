@@ -20,22 +20,29 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 5 | **44** The database server: use IsraJet's PostgreSQL 16 as it is | Done (PR #1, PR #3) |
 | 6 | **15** Login and roles: register, log in, the role decides the pages | Done (PR #5) |
 | 7 | **16** What is left of the admin panel: users | Done (PR #7) |
-| 8 | **48** A maximum session length, with a warning before the logout | Next |
-| 9 | **46** Who did it: the user on every entry and change | Next |
-| 10 | **47** Stations: the admin sets each computer's lounge | Next |
-| 11 | **18** Production deployment (the app server) | Next |
-| 12 | **37** Entry details and the change panels | Next |
-| 13 | **38** The days-of-entries global rule and the operator's log window | Next |
-| 14 | **39** Admin: All entries | Next |
-| 15 | **40** Admin: Rules | Next |
-| 16 | **41** Admin: Clubs, Lounges, Approvers, Global rules | Next |
-| 17 | **43** Hebrew for the admin pages | Next |
-| 18 | **42** The full user guide for the redesign | Next |
-| before the pen test | **49** Close the API's own port (8000) | Next |
-| before the pen test | **50** Fix the npm audit findings | Done (PR #6) |
-| before the pen test | **51** Containers as non-root; no version headers | Next |
-| any time | **31** Length limits on every free-text column | Next |
-| any time | **45** Re-entry after a flight delay (already-entered pass) | Done (PR #4) |
+| 8 | **49** Close the API's own port (8000) | Next |
+| 9 | **52** Login protection: limit failed logins | Next |
+| 10 | **53** Security headers on nginx; no CORS; no version headers | Next |
+| 11 | **54** Hardened containers: non-root, production-only images, read-only, health checks | Next |
+| 12 | **55** The security audit log | Next |
+| 13 | **46** Who did it: the user on every entry and change | Next |
+| 14 | **48** A maximum session length, with a warning before the logout | Next |
+| 15 | **18** Production deployment (the app server), with an image registry | Next |
+| 16 | **56** Security scans in the pipeline, and the release report | Next |
+| 17 | **31** Length limits on every free-text column | Next |
+| when IT delivers the certificate | **57** TLS: HTTPS, the `Secure` cookie, HSTS | Next |
+| — | *IsraJet IT's penetration test* (IT's; not a task of ours) | — |
+| 18 | **47** Stations: the admin sets each computer's lounge | Next |
+| 19 | **37** Entry details and the change panels | Next |
+| 20 | **38** The days-of-entries global rule and the operator's log window | Next |
+| 21 | **39** Admin: All entries | Next |
+| 22 | **40** Admin: Rules | Next |
+| 23 | **41** Admin: Clubs, Lounges, Approvers, Global rules | Next |
+| 24 | **43** Hebrew for the admin pages | Next |
+| 25 | **42** The full user guide for the redesign | Next |
+| — | **50** Fix the npm audit findings | Done (PR #6) |
+| — | **51** Containers as non-root; no version headers | Superseded (by 53 and 54) |
+| — | **45** Re-entry after a flight delay (already-entered pass) | Done (PR #4) |
 
 **Order (Mark, 2026-10-23):** the role split first, then the redesign in small tasks so each diff can be followed, then authentication, then deployment and the guide. **31 can run at any point**: it is a server safety task that depends on neither the redesign nor login. Task 17 (Hebrew and RTL) is superseded by 35 and by the redesign tasks that build every screen RTL-ready.
 
@@ -44,6 +51,8 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 **Task 15 split (Mark, 2026-10-27):** authentication starts basic — register, log in, the role decides the pages and the admin endpoints (15). Who did each entry (46) and the station token (47) follow users (16), before the app server (18); a maximum session length with its warning (48, Mark, 2026-10-31) comes right after 16. Why: DECISIONS.md, 2026-10-27.
 
 **Security before the pen test (Mark, 2026-11-03):** IsraJet's IT received the security-review doc and will run `npm audit` and a penetration test. Tasks 49–51 close the gaps the doc lists as known, before IT gets the code; they are independent of each other and of the redesign.
+
+**Security first (Mark, 2026-11-17):** every item of IT's security assessment that is ours comes before IT's penetration test, and the UI redesign (37–43, 42) after it, since IsraJet doesn't need its features to go live.
 
 **How every task runs** (the full rules are in CLAUDE.md and the dev-style files): one task = one branch off `staging` = one PR. Plan first and wait for Mark's OK. Server first, then client, with a review stop after each. Store changes go through `store-test-writer`, user-visible changes through `user-guide-writer`, DEPLOY.md changes in the same commit and ARCHITECTURE.md in the paired ops commit (`/commit`) when the task touches them. Mark runs `db:generate` and `db:migrate` himself. `/verify` before handing over. Commit only after his go.
 
@@ -166,7 +175,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 - **The header stays as task 34 left it.**
 **Done when:** the whole operator flow matches the mock in both languages and both themes, on a 1366 px laptop and a large monitor, with every task-32 behaviour intact.
 
-### 37. Entry details and the change panels (small–medium, client only) — after 18
+### 37. Entry details and the change panels (small–medium, client only) — after 47
 **Status:** Next
 **Decided:** §2 and the mock. The details window and its change panels (move, rescan, approve as exception, void, add guests, change quantity), one shared panel shape. Behaviour unchanged.
 **Done when:** every change works as before, restyled, in both languages and themes.
@@ -236,7 +245,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Touch:** server: `db/schema.ts` (`users`, `sessions`), one migration (Mark runs `db:generate` / `db:migrate`), `domain/auth.ts` (test-first), `services/authService.ts`, `middleware/auth.ts` (`requireAuth`, `requireRole`), `routes/auth.ts` + `controllers/auth.ts`, the admin-only routes, integration tests (every suite logs in). Client: login and register pages, the role from `/me`, 401 handling, store changes through `store-test-writer`, the guide through `user-guide-writer`. Docs: ARCHITECTURE, CLAUDE.md, DEPLOY.md (the migration, making the first admin), a `/decision`.
 **Done when:** an unauthenticated request to any `/api/*` except `/health` and the auth routes is a 401; anyone can register and log in as an operator; a user Mark makes admin sees the admin pages; an operator can't reach an admin page and gets 403 from the admin endpoints.
 
-### 48. A maximum session length, with a warning before the logout (small–medium, one migration) — after 16
+### 48. A maximum session length, with a warning before the logout (small–medium, one migration) — after 46
 **Status:** Next
 **Why:** Mark (2026-10-31). Task 15 ends a session only after a day without use, so a working desk is never logged out, but a session in daily use never ends either, and its cookie lasts a year. A fixed maximum (a forced re-login every few days) limits how long a copied cookie works. It must never break a scan, so the desk is warned ahead and re-logs in at a moment it chooses.
 **Decided (Mark, 2026-10-31):**
@@ -245,15 +254,17 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Still open:** the maximum (recommended: 7 days) and when the warning opens (recommended: 30 minutes before, again at 5); whether the maximum is an admin setting (a global rule) or a constant (recommended: a constant until IsraJet asks); what the pop-up does if it is ignored (recommended: the logout happens, and the login page keeps the operator's lounge).
 **Done when:** a session ends at its maximum even while in use, the desk is warned before it, and re-logging in from the warning loses nothing on screen.
 
-### 46. Who did it: the user on every entry and change (small–medium, one migration) — after 16
+### 46. Who did it: the user on every entry and change (small–medium, one migration) — after 55
 **Status:** Next
 **Why:** carried from the old task 15: once people log in, each entry should say who logged it.
+**With the audit log (55):** the audit log already records who changed each entry. Planning settles what each one holds: the log is the record of events for IT, and this task puts the user on the entry itself, for the screen and the export.
 **Decided (from the post-POC plan):** `entries.created_by_user_id` (→ `users.id`, who scanned), set by the server from the session on every scan, guest, exception and re-entry; the user on an exceptional approval is who logged it, distinct from `approver_name` (who authorised it). Shown in the entry details and the export.
 **Still open:** whether a modification in place (move, rescan, void, quantity) also records its user (`modified_by_user_id`), or that waits for an audit trail.
 **Done when:** every new entry records who created it, and the details and the export show it.
 
-### 47. Stations: the admin sets each computer's lounge (medium) — after 46
+### 47. Stations: the admin sets each computer's lounge (medium) — after the pen test
 **Status:** Next
+**After the pen test (Mark, 2026-11-17):** it closes a gap of our own, which IT's security assessment doesn't list.
 **Why:** the lounge a scan is logged in comes from the browser today (`loungeId` in every request), so any computer can claim any lounge. The server should trust a station, not the browser.
 **Decided (Mark, 2026-10-23, 2026-10-27):** an admin opens a station-setup window on the computer and picks its lounge; the server issues a **station token** stored on that computer (`localStorage`), checked on every scan and exception; the server takes the lounge from the token, not from the request, and the operator's lounge badge becomes read-only.
 **Still open:** a `stations` table (name, lounge, token hash, active, last seen) so the admin can list and revoke them, or a signed token with no table; whether an operator can log in on a computer that has no station yet (recommended: yes, scanning refused until an admin sets it up).
@@ -273,8 +284,9 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 - **API:** `POST /api/auth/password` (logged in) · `GET /api/users` · `POST /api/users` · `PATCH /api/users/:id` (`role`, `active`) · `POST /api/users/:id/password` — the `/api/users` routes admin only (403). No migration: `users` already has every column.
 **Done when:** an admin manages users without touching SQL, and operators never see the page.
 
-### 18. Production deployment to the on-prem machines: the app server (large) — after 47
+### 18. Production deployment to the on-prem machines: the app server (large) — after 48
 **Status:** Next
+**Decided (Mark, 2026-11-17): an image registry, GitHub's container registry (`ghcr.io`), private.** Today the images are built on the app VM from the code. With the registry, the pipeline builds each image once, the security scans (56) check it, and the pipeline pushes it with a tag; the app VM pulls that exact image, so the image scanned is the image that runs, and a rollback runs the previous tag. The app VM needs no build tools or source code. The registry belongs to the GitHub repository, so it moves to IsraJet with it. **Still open:** check that the app VM can reach `ghcr.io` (it already downloads base images and npm packages to build today), and how it authenticates (a read-only pull token in a file not in git).
 **Decided (carried over):** one compose file per VM. The DB VM is task 44 (its own repository, its roles and secure access); this task is the app VM, connecting with the runtime role task 44 creates. This task adds the app VM's `deploy/app/docker-compose.app.yml` (`api` + `web`, no `pg`, `DATABASE_URL` to `192.168.1.1:5432` from an env file not in git, pinned image tags, `restart: unless-stopped`, log rotation, nginx serving the client and proxying `/api`), retires the demo compose and its seed-on-start on APP.Layam, adds a GitHub Actions job over the VPN (Mark, 2026-10-25: the remaining screens, 37 on, are shipped through it, so it is tested many times before go-live) that runs `db:migrate` before switching traffic and can roll back to the previous tag, and a smoke check after deploy. A test deployment already runs; DEPLOY.md should record it. Backups are the DBA's (DEPLOY.md §Backups).
 **Done when:** a fresh app VM goes from zero to serving with one command, and a rollback is one command.
 
@@ -284,7 +296,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Still open:** whether the in-app help page is part of this task or its own; who translates the guide into Hebrew.
 **Done when:** the guide and its screenshots match the redesigned app, in English and Hebrew.
 
-### 49. Close the API's own port (8000) (small, deployment) — before the pen test
+### 49. Close the API's own port (8000) (small, deployment) — first of the security tasks
 **Status:** Next
 **Why:** `docker-compose.yml` publishes the API on port 8000 of the app server, beside nginx on 3000. nginx reaches the API over Docker's internal network, so the published port only adds a second way in, past nginx. A host firewall rule would not close it: Docker writes its own iptables rules for published ports, which bypass `ufw`.
 **Decided (Mark, 2026-11-03):** remove the API's `ports` from `docker-compose.yml`; nginx stays the only entry point. The security-review doc says it "will be closed".
@@ -299,14 +311,85 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Done when:** `npm audit --omit=dev` reports 0 in both projects (or each remaining finding is explained), and `/verify` passes.
 
 ### 51. Containers as non-root; no version headers (small) — before the pen test
-**Status:** Next
+**Status:** Superseded (by 53 and 54; Mark, 2026-11-17): the version headers go to 53, the non-root user to 54.
 **Why:** two findings a pen test reports, both listed as known in the security-review doc: the API container runs as root (`server/Dockerfile` has no `USER`), and the responses name their software (Express's `X-Powered-By`, nginx's version in `Server`).
 **Decided (Mark, 2026-11-03):** one task for both. The API image runs as the image's `node` user; Express's `x-powered-by` is turned off; nginx gets `server_tokens off`.
 **Touch:** `server/Dockerfile`, `server/src/app.ts`, `client/nginx.conf`; a test that the header is gone; DEPLOY.md if a rebuild step changes.
 **Done when:** `docker compose exec api whoami` is not root, and no response carries `X-Powered-By` or an nginx version.
 
-### 31. Length limits on every free-text column (small–medium, one migration) — any time
+### 52. Login protection: limit failed logins (small–medium, server then client) — after 49
 **Status:** Next
+**Why:** IT's security assessment, a High item. Nothing limits failed logins today, so anyone on the VPN can try passwords against any username, the admin's included, for as long as they like.
+**Decided (Mark, 2026-11-17):**
+- **After 49:** the limit per address trusts the client address nginx passes on (Express's `trust proxy`, one hop), which is only safe once the API's own port is closed; while it is open, anyone can call the API directly with a made-up address.
+- **Failed logins are limited, and the lock is temporary**, never permanent: a permanent lock would let anyone lock an operator out at the desk by typing their username wrongly.
+- **The answer stays the same for an unknown username and a wrong password** (task 15), and the lock doesn't reveal whether a username exists.
+- **A clear message on the login page** when a lock applies, saying when to try again.
+**Still open (recommendations to confirm in the task's plan):**
+- **What is counted:** failures per username (recommended: 5 in a row → that username locked for 15 minutes) and per address (recommended: generous, e.g. 30 in 15 minutes, because the desks of one lounge may reach the server from one address through the VPN).
+- **Where the counts live:** the database for the username (`users.failed_logins`, `locked_until`: one migration, survives a restart) and memory for the address (one API container), or memory for both (lost on restart; no migration). Recommended: the database for the username.
+- **An unknown username** gets the same lock message after the same number of tries, so the lock can't be used to find which usernames exist.
+- **An early unlock:** an admin's password reset clears the lock (recommended), so a locked-out desk isn't stuck for 15 minutes.
+**Touch:** server: the pure rules in `domain/auth.ts` (test-first), `services/authService.ts`, the login controller, `app.ts` (`trust proxy`), maybe `db/schema.ts` and a migration (Mark runs it), integration tests. Client: the login page's message (the store through `store-test-writer`), both languages. Docs: USER_GUIDE (`user-guide-writer`), ARCHITECTURE, DEPLOY.md if a migration, a `/decision`.
+**Done when:** repeated wrong passwords lock that username for a while and slow down an address; the lock ends on its own (or with a password reset); the right password works again after it; the message is clear in both languages.
+
+### 53. Security headers on nginx; no CORS; no version headers (small) — after 52
+**Status:** Next
+**Why:** IT's security assessment: HTTP security headers (High) and restricting CORS (Medium), plus the version headers from 51 (Express's `X-Powered-By`, nginx's version in `Server`).
+**Decided (Mark, 2026-11-17):**
+- **CORS is removed from the API, not restricted:** `app.use(cors())` in `server/src/app.ts` today allows any origin. The browser always calls the API from the page's own address, through nginx in production and through Vite's proxy in development, so the API never needs a cross-origin request. Monitoring that calls `/api/health` and a log collector that reads Docker's logs aren't browsers, so CORS never applies to them. If a browser page on another address ever needs the API, that one origin is allowed then. This doesn't wait for IT's host name.
+- **The headers go on nginx:** a Content Security Policy, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, and framing refused (`frame-ancestors` in the CSP, plus `X-Frame-Options`). HSTS waits for TLS (57).
+- **No version anywhere:** `server_tokens off` in nginx, Express's `x-powered-by` off.
+**Still open:** the exact CSP, checked in the running app in both languages and themes (the fonts are bundled and nothing loads from the internet; the UI components may need inline styles allowed).
+**Touch:** `client/nginx.conf`, `server/src/app.ts`, `server/package.json` (drop `cors`), a test that no response carries `X-Powered-By` or `Access-Control-Allow-Origin`; ARCHITECTURE if it names CORS; DEPLOY.md if a check changes. A redeploy (Mark).
+**Done when:** every response through nginx carries the headers and names no software version, the API sends no CORS header, and every screen works with the CSP on.
+
+### 54. Hardened containers: non-root, production-only images, read-only, health checks (medium, deployment) — after 53
+**Status:** Next
+**Why:** IT's security assessment: hardening the containers (High; the part inside the containers, while the app server itself is IT's), production-only images (Medium), and the health checks IT's monitoring will watch. It takes over 51's non-root user.
+**Decided (Mark, 2026-11-17):**
+- **Multi-stage builds:** the API's final image holds only the compiled code and the production packages, with no dev dependencies, tests or `tsx`. The web image already works this way.
+- **The API runs as the image's `node` user**, not root.
+- **In the compose file:** a read-only filesystem where possible (with small writable temporary folders where a process needs one), every Linux capability dropped unless one is needed, `no-new-privileges`, and a Docker health check for each service.
+- **No registry here:** the images are still built on the app VM (the registry is 18's).
+**The hard part:** the migrations run at container start through `tsx` (a dev tool), and so do the scripts DEPLOY.md runs by hand (the one-time seed, `db:lock`, `user:create-admin`). Without `tsx` they must run from the compiled code.
+**Still open:** compile the scripts with the server build (recommended) or keep a separate tools image; for nginx, the unprivileged image listening on a high port inside the container (recommended) or keep port 80 with one capability.
+**Touch:** `server/Dockerfile`, `client/Dockerfile`, `client/nginx.conf` (if the port changes), `docker-compose.yml`, the server's build and scripts, DEPLOY.md (every command checked against the new images). A redeploy (Mark).
+**Done when:** `docker compose exec api whoami` is not root; the API image has no dev dependencies; the containers run read-only with no extra privileges; both report healthy; the migrations still run on start; and every DEPLOY.md command works with the new images.
+
+### 55. The security audit log (medium) — after 54
+**Status:** Next
+**Why:** IT's security assessment: security audit logging (High), and recording each CSV export (part of export governance, Medium).
+**Decided (Mark, 2026-11-17):**
+- **Structured log lines (JSON) on the API's output**, which Docker keeps and IT can collect into their own log system. Each line holds the time, the event, the user, the client address and the outcome.
+- **The events:** login success and failure (and a lock, from 52), logout, every change on the Users page (create, rename, role, deactivate, reactivate, password reset) and a user's own password change, each CSV export (its filters and row count), and the entry changes (move, rescan, exception, void, quantity).
+- **Never in the log:** passwords, session tokens, or the raw barcode (personal data).
+**Still open:** whether the admin's changes to rules, lounges, clubs, approvers and global rules are logged too (recommended: yes, the same way); a database table and a screen for the log (recommended: not now; the lines first, a screen if IsraJet asks); log rotation on the app VM (Docker's log size limit, here or in 54).
+**Touch:** server: one small logging module used by the services, integration tests that each event writes its line and nothing secret; DEPLOY.md (where the logs are and how IT collects them); ARCHITECTURE.
+**Done when:** every listed event writes one line saying who did what, when and from where; nothing secret or personal is logged; tests prove each event.
+
+### 56. Security scans in the pipeline, and the release report (small–medium, CI) — after 18
+**Status:** Next
+**Why:** IT's security assessment: the dependency review and the container vulnerability assessment (both High). The response to IT proposed a report with every release, instead of one check by hand.
+**Decided (Mark, 2026-11-17):**
+- **In GitHub Actions, on every release:** `npm audit --omit=dev` for the server and the client; a Trivy scan of the two images the pipeline (18) pushes to the registry; an SBOM (the list of components and versions) for each image; the test results.
+- **The report is kept with each release**, as the workflow's artifact, ready to hand to IT.
+- **A High or Critical finding stops the release** unless IT accepts it formally.
+**Still open:** IT's answer: is this report enough, or will they run their own tools as well, and which severity blocks a release.
+**Touch:** `.github/workflows/`, DEPLOY.md (where the report is).
+**Done when:** every release has its report, and a High or Critical finding fails the pipeline.
+
+### 57. TLS: HTTPS, the `Secure` cookie, HSTS (small, deployment) — when IT delivers the certificate
+**Status:** Next (waiting for IT's host name and certificate)
+**Why:** IT's security assessment: HTTPS/TLS (High), and the `Secure` session cookie its assessment result names.
+**Decided (Mark, 2026-11-17):** IT provides the host name in IsraJet's domain, its internal DNS record, and the certificate with its renewal (public, or from IsraJet's own CA trusted on every desk computer), and decides where TLS ends. Ours: HTTPS on JetLog's nginx (443, with 80 redirecting) if TLS ends there, the `Secure` flag on the session cookie, and HSTS.
+**Still open:** IT's choices: the host name, the kind of certificate, and whether TLS ends on JetLog's nginx or on IT's own reverse proxy.
+**Touch:** `client/nginx.conf`, `docker-compose.yml` (port 443, the certificate files mounted, not in git), the cookie options in `server/src/controllers/auth.ts`, DEPLOY.md (installing and renewing the certificate). A redeploy (Mark).
+**Done when:** JetLog is served over HTTPS at its host name, plain HTTP redirects to it, the session cookie carries `Secure`, and HSTS is sent.
+
+### 31. Length limits on every free-text column (small–medium, one migration) — after 56, before the pen test
+**Status:** Next
+**Before the pen test (Mark, 2026-11-17):** not in IT's assessment, but pen testers send oversized values.
 **Why:** Mark (2026-10-21). Many `text` columns have no length limit, so one request can store an arbitrarily long string (up to Express's 100 KB body limit; 3 MB on the rules import), bloating the table, the export and the screen. Task 29 already caps a rule's description and comments at 2,000 characters.
 **Decided (Mark, 2026-10-21):** free-text columns get a maximum length, enforced twice: by the code first (a 400 with a clear message, or an invalid import row), and by the database as the last guard (`varchar(n)`). The limits are defined once and used by both, like `EXCEPTION_MAX_CHARS` and `RULE_TEXT_MAX_CHARS`. It is about size, not injection: Drizzle already sends every value as a parameter.
 **Still open (recommendations to confirm with Mark):**
