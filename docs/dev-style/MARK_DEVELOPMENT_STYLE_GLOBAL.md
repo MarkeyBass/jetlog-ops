@@ -56,6 +56,7 @@ docs/
   archive/           HISTORY frozen documents, each with a HISTORICAL banner
 ```
 
+- **Docs are DRY and minimal, like code.** Each fact lives in one place; anywhere else, point to it rather than repeat it. Write only what the reader (Mark or an agent) needs to act on, and leave out what the code, the plan or another document already says. Agents read these files every session, so every extra line costs, and the docs must stay easy to follow as the application grows.
 - **The root of `docs/` holds only living documents.** They must be current, and they change in the same commit as the code they describe. A stale runbook command is a production incident waiting to happen.
 - **The current plan always lives at `docs/PLAN.md`.** When a plan is finished, move it to `docs/archive/<yyyy-mm>-<name>.md`, mark it HISTORICAL, and start a fresh `PLAN.md`. Unfinished tasks are carried over.
 - **Decisions and the backlog outlive plans**, so they never live inside one. A decision is a new dated row in `DECISIONS.md` that says *why*; an idea for later goes in `BACKLOG.md`, and moves into the plan when it's scheduled.
