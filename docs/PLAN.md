@@ -22,7 +22,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 7 | **16** What is left of the admin panel: users | Done (PR #7) |
 | 8 | **49** Close the API's own port (8000) | In progress (`feature/task-49-close-port-8000`) |
 | 9 | **52** Login protection: limit failed logins | Next |
-| 10 | **53** Security headers on nginx; no CORS; no version headers | Next |
+| 10 | **53** Security headers on nginx; no CORS; no version headers; an Origin check | Next |
 | 11 | **54** Hardened containers: non-root, production-only images, read-only, health checks | Next |
 | 12 | **55** The security audit log | Next |
 | 13 | **46** Who did it: the user on every entry and change | Next |
@@ -333,16 +333,17 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Touch:** server: the pure rules in `domain/auth.ts` (test-first), `services/authService.ts`, the login controller, `app.ts` (`trust proxy`), maybe `db/schema.ts` and a migration (Mark runs it), integration tests. Client: the login page's message (the store through `store-test-writer`), both languages. Docs: USER_GUIDE (`user-guide-writer`), ARCHITECTURE, DEPLOY.md if a migration, a `/decision`.
 **Done when:** repeated wrong passwords lock that username for a while and slow down an address; the lock ends on its own (or with a password reset); the right password works again after it; the message is clear in both languages.
 
-### 53. Security headers on nginx; no CORS; no version headers (small) — after 52
+### 53. Security headers on nginx; no CORS; no version headers; an Origin check (small) — after 52
 **Status:** Next
 **Why:** IT's security assessment: HTTP security headers (High) and restricting CORS (Medium), plus the version headers from 51 (Express's `X-Powered-By`, nginx's version in `Server`).
 **Decided (Mark, 2026-11-17):**
 - **CORS is removed from the API, not restricted:** `app.use(cors())` in `server/src/app.ts` today allows any origin. The browser always calls the API from the page's own address, through nginx in production and through Vite's proxy in development, so the API never needs a cross-origin request. Monitoring that calls `/api/health` and a log collector that reads Docker's logs aren't browsers, so CORS never applies to them. If a browser page on another address ever needs the API, that one origin is allowed then. This doesn't wait for IT's host name.
 - **The headers go on nginx:** a Content Security Policy, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, and framing refused (`frame-ancestors` in the CSP, plus `X-Frame-Options`). HSTS waits for TLS (57).
 - **No version anywhere:** `server_tokens off` in nginx, Express's `x-powered-by` off.
+- **An Origin check on nginx (Mark, 2026-11-18):** a `POST`, `PATCH`, `PUT` or `DELETE` to `/api/` whose `Origin` names another address than the request's own `Host` gets a 403. A request without `Origin` (`curl`, monitoring) passes and still needs a session. It defends the desk's browser against another site (CSRF), beside `SameSite=Lax` and no CORS; it can't keep out a non-browser client, which writes any `Origin` it likes: the VPN, login, roles and 52 do that. Comparing with `Host` means nothing changes when the address does (IT's host name, 57).
 **Still open:** the exact CSP, checked in the running app in both languages and themes (the fonts are bundled and nothing loads from the internet; the UI components may need inline styles allowed).
-**Touch:** `client/nginx.conf`, `server/src/app.ts`, `server/package.json` (drop `cors`), a test that no response carries `X-Powered-By` or `Access-Control-Allow-Origin`; ARCHITECTURE if it names CORS; DEPLOY.md if a check changes. A redeploy (Mark).
-**Done when:** every response through nginx carries the headers and names no software version, the API sends no CORS header, and every screen works with the CSP on.
+**Touch:** `client/nginx.conf`, `server/src/app.ts`, `server/package.json` (drop `cors`), a test that no response carries `X-Powered-By` or `Access-Control-Allow-Origin`, the Origin check tried through nginx (a foreign `Origin`, the app's own, none); ARCHITECTURE if it names CORS; DEPLOY.md if a check changes. A redeploy (Mark).
+**Done when:** every response through nginx carries the headers and names no software version, the API sends no CORS header, a write to `/api/` with a foreign `Origin` gets a 403 while the app's own pages and a request without `Origin` work, and every screen works with the CSP on.
 
 ### 54. Hardened containers: non-root, production-only images, read-only, health checks (medium, deployment) — after 53
 **Status:** Next
