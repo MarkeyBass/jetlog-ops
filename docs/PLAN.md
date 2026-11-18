@@ -21,7 +21,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 6 | **15** Login and roles: register, log in, the role decides the pages | Done (PR #5) |
 | 7 | **16** What is left of the admin panel: users | Done (PR #7) |
 | 8 | **49** Close the API's own port (8000) | In progress (`feature/task-49-close-port-8000`) |
-| 9 | **52** Login protection: limit failed logins | Next |
+| 9 | **52** Login protection: limit failed logins | In progress (`feature/task-52-login-protection`) |
 | 10 | **53** Security headers on nginx; no CORS; no version headers; an Origin check | Next |
 | 11 | **54** Hardened containers: non-root, production-only images, read-only, health checks | Next |
 | 12 | **55** The security audit log | Next |
@@ -318,18 +318,19 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Done when:** `docker compose exec api whoami` is not root, and no response carries `X-Powered-By` or an nginx version.
 
 ### 52. Login protection: limit failed logins (small–medium, server then client) — after 49
-**Status:** Next
+**Status:** In progress (`feature/task-52-login-protection`)
 **Why:** IT's security assessment, a High item. Nothing limits failed logins today, so anyone on the VPN can try passwords against any username, the admin's included, for as long as they like.
 **Decided (Mark, 2026-11-17):**
 - **After 49:** the limit per address trusts the client address nginx passes on (Express's `trust proxy`, one hop), which is only safe once the API's own port is closed; while it is open, anyone can call the API directly with a made-up address.
 - **Failed logins are limited, and the lock is temporary**, never permanent: a permanent lock would let anyone lock an operator out at the desk by typing their username wrongly.
 - **The answer stays the same for an unknown username and a wrong password** (task 15), and the lock doesn't reveal whether a username exists.
 - **A clear message on the login page** when a lock applies, saying when to try again.
-**Still open (recommendations to confirm in the task's plan):**
-- **What is counted:** failures per username (recommended: 5 in a row → that username locked for 15 minutes) and per address (recommended: generous, e.g. 30 in 15 minutes, because the desks of one lounge may reach the server from one address through the VPN).
-- **Where the counts live:** the database for the username (`users.failed_logins`, `locked_until`: one migration, survives a restart) and memory for the address (one API container), or memory for both (lost on restart; no migration). Recommended: the database for the username.
-- **An unknown username** gets the same lock message after the same number of tries, so the lock can't be used to find which usernames exist.
-- **An early unlock:** an admin's password reset clears the lock (recommended), so a locked-out desk isn't stuck for 15 minutes.
+**Decided (Mark, 2026-11-18):**
+- **The limits, constants in the code** (never global rules: security limits aren't edited from a page): 5 failures of one username within 15 minutes lock it for 15 minutes, the same length every time; 30 failures from one address within 15 minutes refuse that address until its window ends. The failure that reaches a limit already answers the lock.
+- **A lock answers 429 with `Retry-After`** (seconds), one message for both limits, refused before the password is checked, so a lock never confirms a right password. The login page says how many minutes to wait.
+- **The username counts live in a `login_failures` table keyed by the username text** (not columns on `users`), so an unknown username is counted and locked exactly like a real one, by one mechanism. A username that breaks the username rules can't be an account and counts only toward its address. A successful login and an admin's password reset delete the row; every attempt deletes the rows that no longer matter, so the table holds only the last 15–30 minutes (at most about addresses × 30 × 2 rows, since only the VPN reaches the login).
+- **The address counts live in memory** (one API container; a restart only resets a 15-minute window), cleaned on every failure, with a hard cap of 10,000 addresses: when full, a new address is refused rather than the map growing. A test proves the map empties once the window passes.
+- **The Users page doesn't show locks** (not now).
 **Touch:** server: the pure rules in `domain/auth.ts` (test-first), `services/authService.ts`, the login controller, `app.ts` (`trust proxy`), maybe `db/schema.ts` and a migration (Mark runs it), integration tests. Client: the login page's message (the store through `store-test-writer`), both languages. Docs: USER_GUIDE (`user-guide-writer`), ARCHITECTURE, DEPLOY.md if a migration, a `/decision`.
 **Done when:** repeated wrong passwords lock that username for a while and slow down an address; the lock ends on its own (or with a password reset); the right password works again after it; the message is clear in both languages.
 
