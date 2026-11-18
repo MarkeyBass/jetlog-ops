@@ -20,7 +20,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 5 | **44** The database server: use IsraJet's PostgreSQL 16 as it is | Done (PR #1, PR #3) |
 | 6 | **15** Login and roles: register, log in, the role decides the pages | Done (PR #5) |
 | 7 | **16** What is left of the admin panel: users | Done (PR #7) |
-| 8 | **49** Close the API's own port (8000) | Next |
+| 8 | **49** Close the API's own port (8000) | In progress (`feature/task-49-close-port-8000`) |
 | 9 | **52** Login protection: limit failed logins | Next |
 | 10 | **53** Security headers on nginx; no CORS; no version headers | Next |
 | 11 | **54** Hardened containers: non-root, production-only images, read-only, health checks | Next |
@@ -297,7 +297,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Done when:** the guide and its screenshots match the redesigned app, in English and Hebrew.
 
 ### 49. Close the API's own port (8000) (small, deployment) — first of the security tasks
-**Status:** Next
+**Status:** In progress (`feature/task-49-close-port-8000`)
 **Why:** `docker-compose.yml` publishes the API on port 8000 of the app server, beside nginx on 3000. nginx reaches the API over Docker's internal network, so the published port only adds a second way in, past nginx. A host firewall rule would not close it: Docker writes its own iptables rules for published ports, which bypass `ufw`.
 **Decided (Mark, 2026-11-03):** remove the API's `ports` from `docker-compose.yml`; nginx stays the only entry point. The security-review doc says it "will be closed".
 **Touch:** `docker-compose.yml`; `docs/DEPLOY.md` (every health check already goes through `:3000/api/health`; check nothing calls `:8000`); the review doc's diagram, ports table and known-limits row once done. A redeploy on the app server (Mark).
