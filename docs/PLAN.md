@@ -23,7 +23,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 8 | **49** Close the API's own port (8000) | Done (PR #8) |
 | 9 | **52** Login protection: limit failed logins | Done (PR #8) |
 | 10 | **53** Security headers on nginx; no CORS; no version headers; an Origin check | Done (PR #9) |
-| 11 | **54** Hardened containers: non-root, production-only images, read-only, health checks | In progress (`feature/task-54-hardened-containers`) |
+| 11 | **54** Hardened containers: non-root, production-only images, read-only, health checks | Done (PR #10) |
 | 12 | **55** The security audit log | Next |
 | 13 | **46** Who did it: the user on every entry and change | Next |
 | 14 | **48** A maximum session length, with a warning before the logout | Next |
@@ -351,7 +351,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Done when:** every response through nginx carries the headers and names no software version, the API sends no CORS header, a write to `/api/` with a foreign `Origin` gets a 403 while the app's own pages and a request without `Origin` work, and every screen works with the CSP on.
 
 ### 54. Hardened containers: non-root, production-only images, read-only, health checks (medium, deployment) — after 53
-**Status:** In progress (`feature/task-54-hardened-containers`)
+**Status:** Done (PR #10)
 **Why:** IT's security assessment: hardening the containers (High; the part inside the containers, while the app server itself is IT's), production-only images (Medium), and the health checks IT's monitoring will watch. It takes over 51's non-root user.
 **Decided (Mark, 2026-11-17):**
 - **Multi-stage builds:** the API's final image holds only the compiled code and the production packages, with no dev dependencies, tests or `tsx`. The web image already works this way.
