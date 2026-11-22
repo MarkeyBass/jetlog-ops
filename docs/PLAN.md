@@ -23,7 +23,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 8 | **49** Close the API's own port (8000) | Done (PR #8) |
 | 9 | **52** Login protection: limit failed logins | Done (PR #8) |
 | 10 | **53** Security headers on nginx; no CORS; no version headers; an Origin check | Done (PR #9) |
-| 11 | **54** Hardened containers: non-root, production-only images, read-only, health checks | Next |
+| 11 | **54** Hardened containers: non-root, production-only images, read-only, health checks | In progress (`feature/task-54-hardened-containers`) |
 | 12 | **55** The security audit log | Next |
 | 13 | **46** Who did it: the user on every entry and change | Next |
 | 14 | **48** A maximum session length, with a warning before the logout | Next |
@@ -351,7 +351,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Done when:** every response through nginx carries the headers and names no software version, the API sends no CORS header, a write to `/api/` with a foreign `Origin` gets a 403 while the app's own pages and a request without `Origin` work, and every screen works with the CSP on.
 
 ### 54. Hardened containers: non-root, production-only images, read-only, health checks (medium, deployment) — after 53
-**Status:** Next
+**Status:** In progress (`feature/task-54-hardened-containers`)
 **Why:** IT's security assessment: hardening the containers (High; the part inside the containers, while the app server itself is IT's), production-only images (Medium), and the health checks IT's monitoring will watch. It takes over 51's non-root user.
 **Decided (Mark, 2026-11-17):**
 - **Multi-stage builds:** the API's final image holds only the compiled code and the production packages, with no dev dependencies, tests or `tsx`. The web image already works this way.
@@ -359,7 +359,12 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 - **In the compose file:** a read-only filesystem where possible (with small writable temporary folders where a process needs one), every Linux capability dropped unless one is needed, `no-new-privileges`, and a Docker health check for each service.
 - **No registry here:** the images are still built on the app VM (the registry is 18's).
 **The hard part:** the migrations run at container start through `tsx` (a dev tool), and so do the scripts DEPLOY.md runs by hand (the one-time seed, `db:lock`, `user:create-admin`). Without `tsx` they must run from the compiled code.
-**Still open:** compile the scripts with the server build (recommended) or keep a separate tools image; for nginx, the unprivileged image listening on a high port inside the container (recommended) or keep port 80 with one capability.
+**Decided (Mark, 2026-11-21):**
+- **The scripts run from the compiled code.** They already compile with the server (they are under `src/`); the build copies in the SQL migrations and `rules.json`. The image has no npm (it can't write its logs on a read-only filesystem, and its scripts call `tsx`), so DEPLOY.md and the README run `node dist/…`; development keeps `npm run …`.
+- **nginx: the unprivileged image**, listening on 8080 inside the container (still 3000 outside), with no capability at all.
+- **Docker's log size limit here:** 10 MB × 5 files per container.
+- **IsraJet collects the logs with Sophos MDR**, an agent IT installs on the app VM, outside the containers. Nothing here stands in its way: it reads Docker's log files on the VM, and if IT prefers syslog or journald, that is one line in the compose file.
+- **One stop** (no screen changes).
 **Touch:** `server/Dockerfile`, `client/Dockerfile`, `client/nginx.conf` (if the port changes), `docker-compose.yml`, the server's build and scripts, DEPLOY.md (every command checked against the new images). A redeploy (Mark).
 **Done when:** `docker compose exec api whoami` is not root; the API image has no dev dependencies; the containers run read-only with no extra privileges; both report healthy; the migrations still run on start; and every DEPLOY.md command works with the new images.
 
@@ -370,7 +375,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 - **Structured log lines (JSON) on the API's output**, which Docker keeps and IT can collect into their own log system. Each line holds the time, the event, the user, the client address and the outcome.
 - **The events:** login success and failure (and a lock, from 52), logout, every change on the Users page (create, rename, role, deactivate, reactivate, password reset) and a user's own password change, each CSV export (its filters and row count), and the entry changes (move, rescan, exception, void, quantity).
 - **Never in the log:** passwords, session tokens, or the raw barcode (personal data).
-**Still open:** whether the admin's changes to rules, lounges, clubs, approvers and global rules are logged too (recommended: yes, the same way); a database table and a screen for the log (recommended: not now; the lines first, a screen if IsraJet asks); log rotation on the app VM (Docker's log size limit, here or in 54).
+**Still open:** whether the admin's changes to rules, lounges, clubs, approvers and global rules are logged too (recommended: yes, the same way); a database table and a screen for the log (recommended: not now; the lines first, a screen if IsraJet asks); log rotation is 54's (10 MB × 5 per container). IsraJet collects the logs with Sophos MDR on the app VM (Mark, 2026-11-21).
 **Touch:** server: one small logging module used by the services, integration tests that each event writes its line and nothing secret; DEPLOY.md (where the logs are and how IT collects them); ARCHITECTURE.
 **Done when:** every listed event writes one line saying who did what, when and from where; nothing secret or personal is logged; tests prove each event.
 
