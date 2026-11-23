@@ -29,7 +29,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 14 | **48** A maximum session length, with a warning before the logout | Done (PR #13) |
 | 15 | **31** Length limits on every free-text column | Done (PR #14) |
 | 16 | **58** Rate limits on nginx, against a flood | Done (PR #15) |
-| 17 | **56** Security scans in the pipeline, and the release report | In progress (`feature/task-56-security-scans`) |
+| 17 | **56** Security scans in the pipeline, and the release report | Done (PR #16) |
 | 18 | **18** Production deployment (the app server), without an image registry | Next |
 | when IT delivers the certificate | **57** TLS: HTTPS, the `Secure` cookie, HSTS | Next |
 | — | *IsraJet IT's penetration test* (IT's; not a task of ours) | — |
@@ -396,7 +396,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Done when:** every listed event writes one line saying who did what, when and from where; nothing secret or personal is logged; tests prove each event.
 
 ### 56. Security scans in the pipeline, and the release report (medium, CI) — after 58, before 18 (moved ahead of 18: Mark, 2026-11-23)
-**Status:** In progress (`feature/task-56-security-scans`)
+**Status:** Done (PR #16)
 **Why:** IT's security assessment: the dependency review and the container vulnerability assessment (both High). The response to IT proposed a report with every release, instead of one check by hand.
 **Decided (Mark, 2026-11-17):**
 - **In GitHub Actions, on every release:** `npm audit --omit=dev` for the server and the client; a Trivy scan of the two images, built by the pipeline from the release's commit (no registry: Mark, 2026-11-23); an SBOM (the list of components and versions) for each image; the test results.
