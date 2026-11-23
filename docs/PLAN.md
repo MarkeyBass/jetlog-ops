@@ -24,7 +24,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 9 | **52** Login protection: limit failed logins | Done (PR #8) |
 | 10 | **53** Security headers on nginx; no CORS; no version headers; an Origin check | Done (PR #9) |
 | 11 | **54** Hardened containers: non-root, production-only images, read-only, health checks | Done (PR #10) |
-| 12 | **55** The security audit log | In progress (`feature/task-55-audit-log`) |
+| 12 | **55** The security audit log | Done (PR #11) |
 | 13 | **46** Who did it: the user on every entry and change | Next |
 | 14 | **48** A maximum session length, with a warning before the logout | Next |
 | 15 | **18** Production deployment (the app server), with an image registry | Next |
@@ -369,7 +369,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Done when:** `docker compose exec api whoami` is not root; the API image has no dev dependencies; the containers run read-only with no extra privileges; both report healthy; the migrations still run on start; and every DEPLOY.md command works with the new images.
 
 ### 55. The security audit log (medium) — after 54
-**Status:** In progress (`feature/task-55-audit-log`)
+**Status:** Done (PR #11)
 **Why:** IT's security assessment: security audit logging (High), and recording each CSV export (part of export governance, Medium).
 **Decided (Mark, 2026-11-17):**
 - **Structured log lines (JSON) on the API's output**, which Docker keeps and IT can collect into their own log system. Each line holds the time, the event, the user, the client address and the outcome.
