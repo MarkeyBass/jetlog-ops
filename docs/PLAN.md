@@ -27,7 +27,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 12 | **55** The security audit log | Done (PR #11) |
 | 13 | **46** Who did it: the user on every entry and change | Next |
 | 14 | **48** A maximum session length, with a warning before the logout | Next |
-| 15 | **18** Production deployment (the app server), with an image registry | Next |
+| 15 | **18** Production deployment (the app server), without an image registry | Next |
 | 16 | **56** Security scans in the pipeline, and the release report | Next |
 | 17 | **31** Length limits on every free-text column | Next |
 | when IT delivers the certificate | **57** TLS: HTTPS, the `Secure` cookie, HSTS | Next |
@@ -54,7 +54,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 
 **Security first (Mark, 2026-11-17):** every item of IT's security assessment that is ours comes before IT's penetration test, and the UI redesign (37–43, 42) after it, since IsraJet doesn't need its features to go live.
 
-**How every task runs** (the full rules are in CLAUDE.md and the dev-style files): one task = one branch off `staging` = one PR. Plan first and wait for Mark's OK. Server first, then client, with a review stop after each. Store changes go through `store-test-writer`, user-visible changes through `user-guide-writer`, DEPLOY.md changes in the same commit and ARCHITECTURE.md in the paired ops commit (`/commit`) when the task touches them. Mark runs `db:generate` and `db:migrate` himself. `/verify` before handing over. Commit only after his go.
+**How every task runs** (the full rules are in CLAUDE.md and the dev-style files): one task = one branch off `staging` = one PR. Plan first and wait for Mark's OK. Server first, then client, with a review stop after each. Store changes go through `store-test-writer`, user-visible changes through `user-guide-writer`, DEPLOY.md changes in the same commit and ARCHITECTURE.md in the paired ops commit (`/commit`) when the task touches them. The agent runs `db:generate` and `db:migrate` on the local databases (Mark, 2026-11-23); production is Mark's. `/verify` before handing over. Commit only after his go.
 
 ---
 
@@ -255,12 +255,18 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Done when:** a session ends at its maximum even while in use, the desk is warned before it, and re-logging in from the warning loses nothing on screen.
 
 ### 46. Who did it: the user on every entry and change (small–medium, one migration) — after 55
-**Status:** Next
+**Status:** In progress (`feature/task-46-entry-user`)
 **Why:** carried from the old task 15: once people log in, each entry should say who logged it.
 **With the audit log (55):** the audit log already records who changed each entry. Planning settles what each one holds: the log is the record of events for IT, and this task puts the user on the entry itself, for the screen and the export.
 **Decided (from the post-POC plan):** `entries.created_by_user_id` (→ `users.id`, who scanned), set by the server from the session on every scan, guest, exception and re-entry; the user on an exceptional approval is who logged it, distinct from `approver_name` (who authorised it). Shown in the entry details and the export.
-**Still open:** whether a modification in place (move, rescan, void, quantity) also records its user (`modified_by_user_id`), or that waits for an audit trail.
-**Done when:** every new entry records who created it, and the details and the export show it.
+**Decided (Mark, 2026-11-23):**
+- **Who modified it too:** `entries.modified_by_user_id` (→ `users.id`), set with `modified_at` by every change in place (move, rescan, exception, void, quantity, and the guests a change touches): the last person who changed it. The full history is the audit log (55).
+- **Ids stored, names read:** both columns hold the user's id and the username is read on every read, so a rename shows on old entries. Users are never deleted, so the id always resolves.
+- **The export** gets `created_by_user_id`, `created_by`, `modified_by_user_id` and `modified_by`, like the lounge and club columns.
+- **On screen, only who created it**, in the entry details window (both roles). Who modified it is in the export only. No column in the entries table and no filter by user.
+- **Entries from before logins** have neither: empty in the export, a dash in the window.
+- **Built straight through** while Mark is away: the server, then the client, as two commits in one PR, reviewed later. The agent runs the migration on the local database.
+**Done when:** every new entry records who created it and every change in place who made it; the details window shows the creator and the export shows both.
 
 ### 47. Stations: the admin sets each computer's lounge (medium) — after the pen test
 **Status:** Next
@@ -286,7 +292,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 
 ### 18. Production deployment to the on-prem machines: the app server (large) — after 48
 **Status:** Next
-**Decided (Mark, 2026-11-17): an image registry, GitHub's container registry (`ghcr.io`), private.** Today the images are built on the app VM from the code. With the registry, the pipeline builds each image once, the security scans (56) check it, and the pipeline pushes it with a tag; the app VM pulls that exact image, so the image scanned is the image that runs, and a rollback runs the previous tag. The app VM needs no build tools or source code. The registry belongs to the GitHub repository, so it moves to IsraJet with it. **Still open:** check that the app VM can reach `ghcr.io` (it already downloads base images and npm packages to build today), and how it authenticates (a read-only pull token in a file not in git).
+**No image registry for now (Mark, 2026-11-23; a private `ghcr.io` registry was decided on 2026-11-17):** the app VM keeps building the images from the code, as today, and a rollback rebuilds the previous release. The registry is in the backlog (why: DECISIONS.md, 2026-11-23).
 **Decided (carried over):** one compose file per VM. The DB VM is task 44 (its own repository, its roles and secure access); this task is the app VM, connecting with the runtime role task 44 creates. This task adds the app VM's `deploy/app/docker-compose.app.yml` (`api` + `web`, no `pg`, `DATABASE_URL` to `192.168.1.1:5432` from an env file not in git, pinned image tags, `restart: unless-stopped`, log rotation, nginx serving the client and proxying `/api`), retires the demo compose and its seed-on-start on APP.Layam, adds a GitHub Actions job over the VPN (Mark, 2026-10-25: the remaining screens, 37 on, are shipped through it, so it is tested many times before go-live) that runs `db:migrate` before switching traffic and can roll back to the previous tag, and a smoke check after deploy. A test deployment already runs; DEPLOY.md should record it. Backups are the DBA's (DEPLOY.md §Backups).
 **Done when:** a fresh app VM goes from zero to serving with one command, and a rollback is one command.
 
@@ -387,7 +393,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Status:** Next
 **Why:** IT's security assessment: the dependency review and the container vulnerability assessment (both High). The response to IT proposed a report with every release, instead of one check by hand.
 **Decided (Mark, 2026-11-17):**
-- **In GitHub Actions, on every release:** `npm audit --omit=dev` for the server and the client; a Trivy scan of the two images the pipeline (18) pushes to the registry; an SBOM (the list of components and versions) for each image; the test results.
+- **In GitHub Actions, on every release:** `npm audit --omit=dev` for the server and the client; a Trivy scan of the two images, built by the pipeline from the release's commit (no registry: Mark, 2026-11-23); an SBOM (the list of components and versions) for each image; the test results.
 - **The report is kept with each release**, as the workflow's artifact, ready to hand to IT.
 - **A High or Critical finding stops the release** unless IT accepts it formally.
 **Still open:** IT's answer: is this report enough, or will they run their own tools as well, and which severity blocks a release.

@@ -9,7 +9,7 @@ Dev DB runs from `docker-compose.dev.yml` (service `pg`, container `jetlog-pg`, 
 
 1. `docker compose -f docker-compose.dev.yml up -d pg`, then wait until `docker inspect -f "{{.State.Health.Status}}" jetlog-pg` says `healthy`.
 2. Make sure `server/.env` exists with `DATABASE_URL`; if missing, copy from `.env.example` and fill the string above.
-3. **Mark runs the migration himself** (agents never run `db:migrate`), so hand him `cd server && npm run db:migrate`, with a row-count check before and after. Then reseed with `cd server && npm run db:seed -- --force`.
+3. Run the migration, `cd server && npm run db:migrate`, with a row-count check before and after (agents may, on the local database only: Mark, 2026-11-23). Then reseed with `cd server && npm run db:seed -- --force`.
    - The seed is guarded (`src/db/seedGuard.ts`). Without `--force` it only seeds an **empty** rules table, and it skips a non-empty one (nothing changes).
    - `--force` replaces the table in one transaction: delete everything, then insert from `src/db/seed-data/rules.json`. This drops rules added by hand.
    - It **refuses** with `NODE_ENV=production`, and on a **locked** database (`deployment_state.locked`) whatever the flags. A refusal changes nothing.

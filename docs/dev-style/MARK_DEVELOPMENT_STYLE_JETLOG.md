@@ -28,11 +28,11 @@ The layout follows the global style's §6, split across the two repos as above:
 
 ## The database
 - Edit `server/src/db/schema.ts`, the model: one file, all tables.
-- Give Mark the generate command, ready to run:
+- **Run the migration commands yourself, on the local databases only** (Mark, 2026-11-23; this differs from the global style's §3). Production is Mark's. Generate with:
   `cd server && npm run db:generate -- --name <what_it_does>`
-  (choose the name yourself, so the command has no placeholder left).
+  (choose the name yourself).
 - Hand-edit the generated SQL in `server/src/db/migrations/` only for a backfill or seed, and verify it matches the TypeScript (e.g. compare keys on `jetlog_test`).
-- Give Mark `npm run db:migrate`, with `psql "postgres://jetlog:jetlog@localhost:5432/jetlog" -c "…"` row-count checks before and after.
+- Run `npm run db:migrate` on the dev DB, with `psql "postgres://jetlog:jetlog@localhost:5432/jetlog" -c "…"` row-count checks before and after, and report them to Mark.
 - Integration tests: `npm run test:integration`, which runs only against `jetlog_test`. Never against the dev DB `jetlog`, and never against production. It skips the slow suites (`slowIntegrationSuite`, e.g. the 500,000-entry export limit), as CI does; `npm run test:integration:all` runs them too, locally.
 
 ## Tests and quality
