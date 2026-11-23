@@ -30,16 +30,17 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 15 | **18** Production deployment (the app server), without an image registry | Next |
 | 16 | **56** Security scans in the pipeline, and the release report | Next |
 | 17 | **31** Length limits on every free-text column | Done (PR #14) |
+| 18 | **58** Rate limits on nginx, against a flood | In progress (`feature/task-58-rate-limit`) |
 | when IT delivers the certificate | **57** TLS: HTTPS, the `Secure` cookie, HSTS | Next |
 | — | *IsraJet IT's penetration test* (IT's; not a task of ours) | — |
-| 18 | **47** Stations: the admin sets each computer's lounge | Next |
-| 19 | **37** Entry details and the change panels | Next |
-| 20 | **38** The days-of-entries global rule and the operator's log window | Next |
-| 21 | **39** Admin: All entries | Next |
-| 22 | **40** Admin: Rules | Next |
-| 23 | **41** Admin: Clubs, Lounges, Approvers, Global rules | Next |
-| 24 | **43** Hebrew for the admin pages | Next |
-| 25 | **42** The full user guide for the redesign | Next |
+| 19 | **47** Stations: the admin sets each computer's lounge | Next |
+| 20 | **37** Entry details and the change panels | Next |
+| 21 | **38** The days-of-entries global rule and the operator's log window | Next |
+| 22 | **39** Admin: All entries | Next |
+| 23 | **40** Admin: Rules | Next |
+| 24 | **41** Admin: Clubs, Lounges, Approvers, Global rules | Next |
+| 25 | **43** Hebrew for the admin pages | Next |
+| 26 | **42** The full user guide for the redesign | Next |
 | — | **50** Fix the npm audit findings | Done (PR #6) |
 | — | **51** Containers as non-root; no version headers | Superseded (by 53 and 54) |
 | — | **45** Re-entry after a flight delay (already-entered pass) | Done (PR #4) |
@@ -429,6 +430,17 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 - **Migration:** the agent runs `db:generate` and `db:migrate` on the dev database for this task (Mark, 2026-11-23), reporting the row counts.
 **Touch:** server (`db/schema.ts`, the limits module, the clubs, lounges, approvers, global-rules, rules and scan validation, integration tests). Client: `maxLength` on the matching fields, the scan length check. Docs: ARCHITECTURE, DEPLOY, CLAUDE.md, USER_GUIDE.
 **Done when:** no chosen column accepts more than its limit, in the code or in the database, and an over-long value is refused with a clear message, writing nothing.
+
+### 58. Rate limits on nginx, against a flood (small, nginx only) — after 31, before the pen test
+**Status:** In progress (`feature/task-58-rate-limit`)
+**Why:** Mark (2026-11-23). Pen testers send floods of requests from one address; nothing limited the rate except the API's failed-login count. nginx is the only way in and refuses cheaply, before the Node server or the database does any work.
+**Decided (Mark, 2026-11-23):**
+- **At nginx, per address and for everyone together**, plus a tighter count on the login on top of the API's failed-login limit (which stays: only the API knows usernames).
+- **Generous: only an attack meets them.** The desks and the admins send a few requests a second at their busiest, even if they all reach nginx from one address. 50 a second per address with a burst of 200; 200 a second for everyone with a burst of 400; the login 2 a second per address with a burst of 20; 100 open connections per address. A slow sender is cut off after 10 seconds of silence.
+- **A refusal is a 429 in the API's JSON envelope**, logged as a warning in nginx's error log (on Docker's output, so IT's collector reads it). No `Retry-After`: adding a header there would drop the security headers, and the wait is a second.
+- **The client is not changed:** it shows the server's words, "Too many requests", which normal work never sees.
+**Touch:** `client/nginx.conf`, DEPLOY.md (a check after a deploy), USER_GUIDE, ARCHITECTURE.
+**Done when:** a flood from one address, from many, and on the login is refused with a 429 while normal use is never refused, checked in the running app.
 
 ### 45. Re-entry after a flight delay: a pass that already entered (small, one migration) — Mark to place in the order
 **Status:** Done (PR #4)
