@@ -412,6 +412,9 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 - **The scan jobs install nothing** (`npm audit` reads the lockfile; the scanners run from pinned images), so no package's install script runs there (the 2025 npm worms spread through them).
 - **Not taken from the reference:** the registry push and the GitOps update (no registry, no Argo), and the conventional-commit version bump (our messages are sentences).
 - **Enforcing the gate on GitHub:** GitHub Pro on Mark's account, so the PR checks can be required (Mark sets it up); the release gate holds either way.
+**Decided (Mark, 2026-11-23, after the first ZAP run):**
+- **The cross-origin isolation headers are added** on nginx (`Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Embedder-Policy: require-corp`, `Cross-Origin-Resource-Policy: same-origin`), which 53 had left out; ZAP flagged them, and JetLog loads nothing from another address, so they cost nothing.
+- **ZAP's app waits for its database through compose** (the API `depends_on` the database being healthy, in a small file of the ZAP job's own), not through the order of the start commands.
 **Still open:** IT's answer: is this report enough, or will they run their own tools as well, and which severity blocks a release.
 **Touch:** `.github/workflows/` (the PR gates, the release, the schedule), `.github/dependabot.yml`, `.trivyignore.yaml`, the Dockerfiles (digests), the Semgrep config, DEPLOY.md (where the report is and how to read it), README (the checks).
 **Done when:** every PR runs the fast gates; every push to `main` produces the report or fails on a High or Critical finding; the weekly scan runs; every action and image is pinned.
