@@ -30,7 +30,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 15 | **31** Length limits on every free-text column | Done (PR #14) |
 | 16 | **58** Rate limits on nginx, against a flood | Done (PR #15) |
 | 17 | **56** Security scans in the pipeline, and the release report | Done (PR #16) |
-| 18 | **59** Server errors never show their text; ids checked against the column | In progress |
+| 18 | **59** Server errors never show their text; ids checked against the column | Done (PR #17) |
 | 18 | **18** Production deployment (the app server), without an image registry | Next |
 | when IT delivers the certificate | **57** TLS: HTTPS, the `Secure` cookie, HSTS | Next |
 | — | *IsraJet IT's penetration test* (IT's; not a task of ours) | — |
@@ -457,7 +457,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Done when:** a flood from one address, from many, and on the login is refused with a 429 while normal use is never refused, checked in the running app.
 
 ### 59. Server errors never show their text; ids checked against the column (small, server only) — after 56, before the pen test
-**Status:** In progress (`feature/task-59-server-errors`)
+**Status:** Done (PR #17)
 **Why:** A review before the pen test: an unexpected error answered 500 with its own text, in production too, and left no trace in the log. An id too large for the database's `integer` column (e.g. `/api/entries/99999999999`) made the database refuse the query, and Drizzle's error text carries the query and its values: the answer showed the SQL with every column of the table. Reproduced on the entries log, an entry, a club image and a lounge update (any logged-in user; the pen testers get accounts).
 **Decided (Mark, 2026-11-23):**
 - **An unexpected error answers only `Server Error`** (500); the errors the code raises on purpose (`ErrorResponse`, a bad barcode, a bad body or upload) keep their messages.
