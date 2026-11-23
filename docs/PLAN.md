@@ -26,7 +26,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 11 | **54** Hardened containers: non-root, production-only images, read-only, health checks | Done (PR #10) |
 | 12 | **55** The security audit log | Done (PR #11) |
 | 13 | **46** Who did it: the user on every entry and change | Done (PR #12) |
-| 14 | **48** A maximum session length, with a warning before the logout | Next |
+| 14 | **48** A maximum session length, with a warning before the logout | In progress |
 | 15 | **18** Production deployment (the app server), without an image registry | Next |
 | 16 | **56** Security scans in the pipeline, and the release report | Next |
 | 17 | **31** Length limits on every free-text column | Next |
@@ -246,7 +246,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Done when:** an unauthenticated request to any `/api/*` except `/health` and the auth routes is a 401; anyone can register and log in as an operator; a user Mark makes admin sees the admin pages; an operator can't reach an admin page and gets 403 from the admin endpoints.
 
 ### 48. A maximum session length, with a warning before the logout (small–medium, one migration) — after 46
-**Status:** Next
+**Status:** In progress (`feature/task-48-session-max`)
 **Why:** Mark (2026-10-31). Task 15 ends a session only after a day without use, so a working desk is never logged out, but a session in daily use never ends either, and its cookie lasts a year. A fixed maximum (a forced re-login every few days) limits how long a copied cookie works. It must never break a scan, so the desk is warned ahead and re-logs in at a moment it chooses.
 **Decided (Mark, 2026-10-31):**
 - **Two limits:** the day-without-use limit stays as it is, and every session also ends a fixed time after login, used or not (`sessions.max_expires_at`, set at login and never renewed). The cookie lasts as long as that maximum, not a year.
