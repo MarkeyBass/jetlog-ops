@@ -27,10 +27,10 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 12 | **55** The security audit log | Done (PR #11) |
 | 13 | **46** Who did it: the user on every entry and change | Done (PR #12) |
 | 14 | **48** A maximum session length, with a warning before the logout | Done (PR #13) |
-| 15 | **18** Production deployment (the app server), without an image registry | Next |
-| 16 | **56** Security scans in the pipeline, and the release report | Next |
-| 17 | **31** Length limits on every free-text column | Done (PR #14) |
-| 18 | **58** Rate limits on nginx, against a flood | Done (PR #15) |
+| 15 | **31** Length limits on every free-text column | Done (PR #14) |
+| 16 | **58** Rate limits on nginx, against a flood | Done (PR #15) |
+| 17 | **56** Security scans in the pipeline, and the release report | In progress (`feature/task-56-security-scans`) |
+| 18 | **18** Production deployment (the app server), without an image registry | Next |
 | when IT delivers the certificate | **57** TLS: HTTPS, the `Secure` cookie, HSTS | Next |
 | — | *IsraJet IT's penetration test* (IT's; not a task of ours) | — |
 | 19 | **47** Stations: the admin sets each computer's lounge | Next |
@@ -395,16 +395,26 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Touch:** server: one small logging module used by the services, integration tests that each event writes its line and nothing secret; DEPLOY.md (where the logs are and how IT collects them); ARCHITECTURE.
 **Done when:** every listed event writes one line saying who did what, when and from where; nothing secret or personal is logged; tests prove each event.
 
-### 56. Security scans in the pipeline, and the release report (small–medium, CI) — after 18
-**Status:** Next
+### 56. Security scans in the pipeline, and the release report (medium, CI) — after 58, before 18 (moved ahead of 18: Mark, 2026-11-23)
+**Status:** In progress (`feature/task-56-security-scans`)
 **Why:** IT's security assessment: the dependency review and the container vulnerability assessment (both High). The response to IT proposed a report with every release, instead of one check by hand.
 **Decided (Mark, 2026-11-17):**
 - **In GitHub Actions, on every release:** `npm audit --omit=dev` for the server and the client; a Trivy scan of the two images, built by the pipeline from the release's commit (no registry: Mark, 2026-11-23); an SBOM (the list of components and versions) for each image; the test results.
 - **The report is kept with each release**, as the workflow's artifact, ready to hand to IT.
 - **A High or Critical finding stops the release** unless IT accepts it formally.
+**Decided (Mark, 2026-11-23, from his reference workflow; details may change later):**
+- **The fast gates run on every PR, like the tests:** Semgrep (named rule sets, not `--config auto`; only `ERROR` fails), `npm audit --omit=dev --audit-level=high` for the server and the client (the dev packages reported, not failing), gitleaks (secrets in the code and its history), zizmor (unsafe patterns in the workflows).
+- **The release is a push to `main`:** the tests and the same gates again on that exact commit, then both images built, Trivy on each (High and Critical fail, unfixed ignored), an SBOM of each (CycloneDX, from Trivy), and a ZAP baseline scan of the running stack (report-only at first). The release is tagged `vYYYY.MM.DD` (Israel's date; `.2`, `.3` for more that day) by the release job, only when everything passed; the deploy (18) will start only from a tagged commit.
+- **The report, kept as the run's artifact for 400 days** (the most a private repo allows), also on a failed release (marked FAILED, untagged), so the reason is there: a summary (on the run's page and as a file) with the verdict, the tag, commit and date, each check with pass or fail and its findings per severity, every failing finding (what, where, severity, the fixed version), the findings IT accepted, the ZAP alerts, and the release notes (the commits since the previous tag); then each scanner's own output and the SBOMs, for IT.
+- **A weekly scheduled scan** of the current images (and on demand), so a new CVE is seen before a release meets it.
+- **A finding IT accepts** goes into `.trivyignore.yaml` with its reason and an end date.
+- **Pinned supply chain:** every action and the scanners' images by full commit SHA or digest (the March 2026 attack rewrote trivy-action's tags); the base images in both Dockerfiles by digest, so the scanned image is the one the app VM builds from that commit; Dependabot (alerts, security updates, and version updates for npm, Docker and the actions, waiting a few days after each release of a package) keeps the pins current. Workflows get a read-only token by default; only the release job writes (its tag).
+- **The scan jobs install nothing** (`npm audit` reads the lockfile; the scanners run from pinned images), so no package's install script runs there (the 2025 npm worms spread through them).
+- **Not taken from the reference:** the registry push and the GitOps update (no registry, no Argo), and the conventional-commit version bump (our messages are sentences).
+- **Enforcing the gate on GitHub:** GitHub Pro on Mark's account, so the PR checks can be required (Mark sets it up); the release gate holds either way.
 **Still open:** IT's answer: is this report enough, or will they run their own tools as well, and which severity blocks a release.
-**Touch:** `.github/workflows/`, DEPLOY.md (where the report is).
-**Done when:** every release has its report, and a High or Critical finding fails the pipeline.
+**Touch:** `.github/workflows/` (the PR gates, the release, the schedule), `.github/dependabot.yml`, `.trivyignore.yaml`, the Dockerfiles (digests), the Semgrep config, DEPLOY.md (where the report is and how to read it), README (the checks).
+**Done when:** every PR runs the fast gates; every push to `main` produces the report or fails on a High or Critical finding; the weekly scan runs; every action and image is pinned.
 
 ### 57. TLS: HTTPS, the `Secure` cookie, HSTS (small, deployment) — when IT delivers the certificate
 **Status:** Next (waiting for IT's host name and certificate)
