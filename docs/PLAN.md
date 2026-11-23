@@ -29,7 +29,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 14 | **48** A maximum session length, with a warning before the logout | Done (PR #13) |
 | 15 | **18** Production deployment (the app server), without an image registry | Next |
 | 16 | **56** Security scans in the pipeline, and the release report | Next |
-| 17 | **31** Length limits on every free-text column | In progress (`feature/task-31-length-limits`) |
+| 17 | **31** Length limits on every free-text column | Done (PR #14) |
 | when IT delivers the certificate | **57** TLS: HTTPS, the `Secure` cookie, HSTS | Next |
 | — | *IsraJet IT's penetration test* (IT's; not a task of ours) | — |
 | 18 | **47** Stations: the admin sets each computer's lounge | Next |
@@ -414,7 +414,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Done when:** JetLog is served over HTTPS at its host name, plain HTTP redirects to it, the session cookie carries `Secure`, and HSTS is sent.
 
 ### 31. Length limits on every free-text column (small–medium, one migration) — after 48, before the pen test (moved ahead of 56: Mark, 2026-11-23)
-**Status:** In progress (`feature/task-31-length-limits`)
+**Status:** Done (PR #14)
 **Before the pen test (Mark, 2026-11-17):** not in IT's assessment, but pen testers send oversized values.
 **Why:** Mark (2026-10-21). Many `text` columns have no length limit, so one request can store an arbitrarily long string (up to Express's 100 KB body limit; 3 MB on the rules import), bloating the table, the export and the screen. Task 29 already caps a rule's description and comments at 2,000 characters.
 **Decided (Mark, 2026-10-21):** free-text columns get a maximum length, enforced twice: by the code first (a 400 with a clear message, or an invalid import row), and by the database as the last guard (`varchar(n)`). The limits are defined once and used by both, like `EXCEPTION_MAX_CHARS` and `RULE_TEXT_MAX_CHARS`. It is about size, not injection: Drizzle already sends every value as a parameter.
