@@ -29,7 +29,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 14 | **48** A maximum session length, with a warning before the logout | Done (PR #13) |
 | 15 | **18** Production deployment (the app server), without an image registry | Next |
 | 16 | **56** Security scans in the pipeline, and the release report | Next |
-| 17 | **31** Length limits on every free-text column | Next |
+| 17 | **31** Length limits on every free-text column | In progress (`feature/task-31-length-limits`) |
 | when IT delivers the certificate | **57** TLS: HTTPS, the `Secure` cookie, HSTS | Next |
 | — | *IsraJet IT's penetration test* (IT's; not a task of ours) | — |
 | 18 | **47** Stations: the admin sets each computer's lounge | Next |
@@ -413,16 +413,21 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Touch:** `client/nginx.conf`, `docker-compose.yml` (port 443, the certificate files mounted, not in git), the cookie options in `server/src/controllers/auth.ts`, DEPLOY.md (installing and renewing the certificate). A redeploy (Mark).
 **Done when:** JetLog is served over HTTPS at its host name, plain HTTP redirects to it, the session cookie carries `Secure`, and HSTS is sent.
 
-### 31. Length limits on every free-text column (small–medium, one migration) — after 56, before the pen test
-**Status:** Next
+### 31. Length limits on every free-text column (small–medium, one migration) — after 48, before the pen test (moved ahead of 56: Mark, 2026-11-23)
+**Status:** In progress (`feature/task-31-length-limits`)
 **Before the pen test (Mark, 2026-11-17):** not in IT's assessment, but pen testers send oversized values.
 **Why:** Mark (2026-10-21). Many `text` columns have no length limit, so one request can store an arbitrarily long string (up to Express's 100 KB body limit; 3 MB on the rules import), bloating the table, the export and the screen. Task 29 already caps a rule's description and comments at 2,000 characters.
 **Decided (Mark, 2026-10-21):** free-text columns get a maximum length, enforced twice: by the code first (a 400 with a clear message, or an invalid import row), and by the database as the last guard (`varchar(n)`). The limits are defined once and used by both, like `EXCEPTION_MAX_CHARS` and `RULE_TEXT_MAX_CHARS`. It is about size, not injection: Drizzle already sends every value as a parameter.
-**Still open (recommendations to confirm with Mark):**
-- **Which columns**, by risk: `entries.raw_barcode` (the only column filled from an untrusted source; cap around 1,000); the admin free text (`clubs.code`/`description`, `lounges.code`/`description`, `approvers.name`/`company`, `global_rules.value`) and their copies on `entries`; the columns the code derives (generously, or left out for a smaller migration).
-- **An over-long scan:** refused with a 400 and nothing logged, rather than stored cut short.
-- **The limits:** club and lounge code 50, descriptions 2,000, approver name and company 200, global-rule value 1,000.
-**Touch:** server (`db/schema.ts`, the constants, validation in the clubs, lounges, approvers, global-rules and scan endpoints, integration tests); before migrating, a query per column confirms no existing value is longer than its limit. Client: `maxLength` on the matching fields. Docs: ARCHITECTURE, DEPLOY, CLAUDE.md, USER_GUIDE, a `/decision`.
+**Decided (Mark, 2026-11-23):**
+- **The scanned barcode:** at most 1,000 characters, on the scan, the club question, the rescan and the re-entry (a real pass is a few hundred at most). A longer one is refused with a 400 and nothing is logged. The desk checks it before sending, so the operator reads the message in their language.
+- **A rule's carrier, class, frequent flyer and company field:** at most 10 characters each, in the editor and the CSV import (an invalid row), far above any real code.
+- **The limits the code already has are kept** (club code 50, lounge code 10, club and lounge descriptions 500, approver name and company 100, username 50) instead of the draft numbers; the global-rule value gets 1,000. Each limit is defined once, in one module, shared by the check and the column.
+- **The database guard:** `varchar(n)` on those columns, plus `entries.approver_name` and `voided_by` (the approver name's 100) and `login_failures.username` (the username's 50). The columns the server fills itself (hashes, rule keys, the fields parsed from the barcode, `locked_by`) stay `text`: the barcode cap bounds them.
+- **Counted in characters, as Postgres counts a varchar,** so the check and the column always agree, Hebrew included.
+- **No length limit on the scan box itself,** so a scan is never cut short silently; the other fields get the matching `maxLength`.
+- **Production:** DEPLOY.md gets a check query per column, run before migrating; a too-long value stops the migration with nothing changed.
+- **Migration:** the agent runs `db:generate` and `db:migrate` on the dev database for this task (Mark, 2026-11-23), reporting the row counts.
+**Touch:** server (`db/schema.ts`, the limits module, the clubs, lounges, approvers, global-rules, rules and scan validation, integration tests). Client: `maxLength` on the matching fields, the scan length check. Docs: ARCHITECTURE, DEPLOY, CLAUDE.md, USER_GUIDE.
 **Done when:** no chosen column accepts more than its limit, in the code or in the database, and an over-long value is refused with a clear message, writing nothing.
 
 ### 45. Re-entry after a flight delay: a pass that already entered (small, one migration) — Mark to place in the order
