@@ -25,7 +25,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 10 | **53** Security headers on nginx; no CORS; no version headers; an Origin check | Done (PR #9) |
 | 11 | **54** Hardened containers: non-root, production-only images, read-only, health checks | Done (PR #10) |
 | 12 | **55** The security audit log | Done (PR #11) |
-| 13 | **46** Who did it: the user on every entry and change | Next |
+| 13 | **46** Who did it: the user on every entry and change | Done (PR #12) |
 | 14 | **48** A maximum session length, with a warning before the logout | Next |
 | 15 | **18** Production deployment (the app server), without an image registry | Next |
 | 16 | **56** Security scans in the pipeline, and the release report | Next |
@@ -255,7 +255,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Done when:** a session ends at its maximum even while in use, the desk is warned before it, and re-logging in from the warning loses nothing on screen.
 
 ### 46. Who did it: the user on every entry and change (small–medium, one migration) — after 55
-**Status:** In progress (`feature/task-46-entry-user`)
+**Status:** Done (PR #12)
 **Why:** carried from the old task 15: once people log in, each entry should say who logged it.
 **With the audit log (55):** the audit log already records who changed each entry. Planning settles what each one holds: the log is the record of events for IT, and this task puts the user on the entry itself, for the screen and the export.
 **Decided (from the post-POC plan):** `entries.created_by_user_id` (→ `users.id`, who scanned), set by the server from the session on every scan, guest, exception and re-entry; the user on an exceptional approval is who logged it, distinct from `approver_name` (who authorised it). Shown in the entry details and the export.
