@@ -54,7 +54,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 
 **Security first (Mark, 2026-11-17):** every item of IT's security assessment that is ours comes before IT's penetration test, and the UI redesign (37–43, 42) after it, since IsraJet doesn't need its features to go live.
 
-**How every task runs** (the full rules are in CLAUDE.md and the dev-style files): one task = one branch off `staging` = one PR. Plan first and wait for Mark's OK. Server first, then client, with a review stop after each. Store changes go through `store-test-writer`, user-visible changes through `user-guide-writer`, DEPLOY.md changes in the same commit and ARCHITECTURE.md in the paired ops commit (`/commit`) when the task touches them. The agent runs `db:generate` and `db:migrate` on the local databases (Mark, 2026-11-23); production is Mark's. `/verify` before handing over. Commit only after his go.
+**How every task runs** (the full rules are in CLAUDE.md and the dev-style files): one task = one branch off `staging` = one PR. Plan first and wait for Mark's OK. Server first, then client, with a review stop after each. Store changes go through `store-test-writer`, user-visible changes through `user-guide-writer`, DEPLOY.md changes in the same commit and ARCHITECTURE.md in the paired ops commit (`/commit`) when the task touches them. Mark runs `db:generate` and `db:migrate` himself; the agent runs them only when he explicitly allows it for that task, on the local databases. `/verify` before handing over. Commit only after his go.
 
 ---
 
@@ -251,7 +251,12 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Decided (Mark, 2026-10-31):**
 - **Two limits:** the day-without-use limit stays as it is, and every session also ends a fixed time after login, used or not (`sessions.max_expires_at`, set at login and never renewed). The cookie lasts as long as that maximum, not a year.
 - **A warning before the fixed end:** `GET /api/auth/me` (and login) returns when the session ends; the client keeps a timer and, shortly before, opens a pop-up ("You'll be logged out at 14:00") with **Log in again now**, which asks for the password in the pop-up itself and keeps the screen and any scan in progress.
-**Still open:** the maximum (recommended: 7 days) and when the warning opens (recommended: 30 minutes before, again at 5); whether the maximum is an admin setting (a global rule) or a constant (recommended: a constant until IsraJet asks); what the pop-up does if it is ignored (recommended: the logout happens, and the login page keeps the operator's lounge).
+**Decided (Mark, 2026-11-23):**
+- **The maximum is 12 hours (one shift)**, a constant in the code next to the day-without-use limit, not an admin setting, until IsraJet asks.
+- **The warning opens 30 minutes before the end, and again at 5.** Its **Log in again now** asks only for the password and lets only the same user continue; someone else logs out and in the normal way, so nobody takes over another person's screen.
+- **If the warning is ignored,** the logout happens at the end time, and the login page keeps the station's lounge.
+- **Sessions open at the deploy** get the maximum counted from their login (the migration fills `max_expires_at` from `created_at`), so a session older than 12 hours ends at once.
+- **Built straight through** while Mark is away: the server, then the client, in one PR, reviewed later. Mark allowed the agent to run this task's migration on the local database.
 **Done when:** a session ends at its maximum even while in use, the desk is warned before it, and re-logging in from the warning loses nothing on screen.
 
 ### 46. Who did it: the user on every entry and change (small–medium, one migration) — after 55
