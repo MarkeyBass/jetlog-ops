@@ -30,7 +30,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 15 | **18** Production deployment (the app server), without an image registry | Next |
 | 16 | **56** Security scans in the pipeline, and the release report | Next |
 | 17 | **31** Length limits on every free-text column | Done (PR #14) |
-| 18 | **58** Rate limits on nginx, against a flood | In progress (`feature/task-58-rate-limit`) |
+| 18 | **58** Rate limits on nginx, against a flood | Done (PR #15) |
 | when IT delivers the certificate | **57** TLS: HTTPS, the `Secure` cookie, HSTS | Next |
 | — | *IsraJet IT's penetration test* (IT's; not a task of ours) | — |
 | 19 | **47** Stations: the admin sets each computer's lounge | Next |
@@ -432,7 +432,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Done when:** no chosen column accepts more than its limit, in the code or in the database, and an over-long value is refused with a clear message, writing nothing.
 
 ### 58. Rate limits on nginx, against a flood (small, nginx only) — after 31, before the pen test
-**Status:** In progress (`feature/task-58-rate-limit`)
+**Status:** Done (PR #15)
 **Why:** Mark (2026-11-23). Pen testers send floods of requests from one address; nothing limited the rate except the API's failed-login count. nginx is the only way in and refuses cheaply, before the Node server or the database does any work.
 **Decided (Mark, 2026-11-23):**
 - **At nginx, per address and for everyone together**, plus a tighter count on the login on top of the API's failed-login limit (which stays: only the API knows usernames).
