@@ -31,7 +31,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 16 | **58** Rate limits on nginx, against a flood | Done (PR #15) |
 | 17 | **56** Security scans in the pipeline, and the release report | Done (PR #16) |
 | 18 | **59** Server errors never show their text; ids checked against the column | Done (PR #17) |
-| when the certificate arrives | **57** TLS: HTTPS, the `Secure` cookie, HSTS | Next |
+| when the certificate arrives | **57** TLS: HTTPS, the `Secure` cookie, HSTS | In progress |
 | — | *IsraJet IT's penetration test* (IT's; not a task of ours) | — |
 | after the pen test | **18** Production deployment (the app server), automated | Next |
 | 19 | **47** Stations: the admin sets each computer's lounge | Next |
@@ -422,12 +422,12 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Done when:** every PR runs the fast gates; every push to `main` produces the report or fails on a High or Critical finding; the weekly scan runs; every action and image is pinned.
 
 ### 57. TLS: HTTPS, the `Secure` cookie, HSTS (small, deployment) — when the certificate arrives
-**Status:** Next (planned; built when Lev's company delivers the certificate)
+**Status:** In progress (`feature/task-57-https`; the certificate arrived 2026-11-26)
 **Why:** IT's security assessment: HTTPS/TLS (High), and the `Secure` session cookie its assessment result names.
 **Decided (Mark, 2026-11-23; replaces the 2026-11-17 split, where IT would decide where TLS ends):**
 - **Mark manages HTTPS; IT only hands over the certificate** (for a host name in IsraJet's domain and for the address `192.168.0.1`, with the host name's internal DNS record, signed by a CA every desk computer trusts), and decides how the key is made and delivered. The request to IT is short: what is needed, not how it is done. TLS ends on JetLog's own nginx on the app VM; there is no IT reverse proxy.
 - **Built when the certificate arrives**, not before: Mark deploys the current releases by hand first, and this task follows as its own release.
-**Proposed (for Mark's review):**
+**Built as proposed (Mark, 2026-11-26: "start the HTTPS branch"):**
 - **Ports:** HTTPS on 443 (nginx listens on 8443 inside the container, as it may not open a port below 1024). Plain HTTP on 80 and on 3000 only redirects (301) to `https://` + the same host, so the desks' old shortcuts still land on the right page. The desks' shortcuts change to `https://<host name>`.
 - **Where the files live:** `tls/fullchain.pem` (the certificate and its chain) and `tls/privkey.pem` next to `.env.prod` in `/root/jetlog`, git-ignored, mounted read-only into the web container; owned by nginx's user (101), the key readable by it alone. A deploy (`git archive | tar -x`) never touches them.
 - **The key comes however IT decides:** PEM files are used as they are; a `.pfx` is converted by the `openssl` commands DEPLOY.md gives.
@@ -437,7 +437,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 - **Everything else stays:** the security headers, the Origin check (it compares host names, which HTTPS doesn't change), the body sizes and the rate limits move to the HTTPS server; the redirect server gets the rate limits and `server_tokens off` too.
 - **Local and CI use a self-signed certificate,** made by one `openssl` command into `tls/` (README for local, a step in the release's ZAP job, which then scans `https://localhost`). The web container's health check checks the HTTPS port, since the plain port only redirects.
 - **Renewal:** IT says the certificate's end date; Mark asks for the next one a month before. Replacing the two files and restarting the web container is the whole renewal (DEPLOY.md, with the command that prints the end date).
-**Still open:** IT's answers: the host name, the CA (IsraJet's own, trusted on every desk; a public CA can't name a private address like `192.168.0.1`, so with one the address isn't in the certificate), the files' format, the end date, and ports 443 and 80 open from the desks to the app VM.
+**Still open:** the files' format and the host name (Mark reads them from the files; DEPLOY.md covers PEM files and a `.pfx`), ports 443 and 80 open from the desks (IT, after Mark confirms the install), and **raising HSTS to a year** (`max-age=31536000` in `client/nginx.conf`) once HTTPS has run a week without trouble.
 **Touch:** `client/nginx.conf`, `client/Dockerfile` (the port), `docker-compose.yml` (ports, the `tls/` mount, the health check), `.gitignore`, the cookie options in `server/src/controllers/auth.ts` with an integration test, `.github/workflows/release.yml` (ZAP over HTTPS), README (the local certificate), DEPLOY.md (the CSR, installing, checking and renewing the certificate; every `http://…:3000` check becomes HTTPS), ARCHITECTURE. A redeploy (Mark).
 **Done when:** JetLog is served over HTTPS at its host name (and at `192.168.0.1`, if the certificate names it) with no browser warning on a desk, plain HTTP (80 and 3000) redirects to it, the session cookie carries `Secure`, HSTS is sent, and the checks in DEPLOY.md pass on the app VM.
 
