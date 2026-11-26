@@ -23,23 +23,25 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 8 | **49** Close the API's own port (8000) | Done (PR #8) |
 | 9 | **52** Login protection: limit failed logins | Done (PR #8) |
 | 10 | **53** Security headers on nginx; no CORS; no version headers; an Origin check | Done (PR #9) |
-| 11 | **54** Hardened containers: non-root, production-only images, read-only, health checks | Next |
-| 12 | **55** The security audit log | Next |
-| 13 | **46** Who did it: the user on every entry and change | Next |
-| 14 | **48** A maximum session length, with a warning before the logout | Next |
-| 15 | **18** Production deployment (the app server), with an image registry | Next |
-| 16 | **56** Security scans in the pipeline, and the release report | Next |
-| 17 | **31** Length limits on every free-text column | Next |
+| 11 | **54** Hardened containers: non-root, production-only images, read-only, health checks | Done (PR #10) |
+| 12 | **55** The security audit log | Done (PR #11) |
+| 13 | **46** Who did it: the user on every entry and change | Done (PR #12) |
+| 14 | **48** A maximum session length, with a warning before the logout | Done (PR #13) |
+| 15 | **31** Length limits on every free-text column | Done (PR #14) |
+| 16 | **58** Rate limits on nginx, against a flood | Done (PR #15) |
+| 17 | **56** Security scans in the pipeline, and the release report | Done (PR #16) |
+| 18 | **59** Server errors never show their text; ids checked against the column | Done (PR #17) |
+| 18 | **18** Production deployment (the app server), without an image registry | Next |
 | when IT delivers the certificate | **57** TLS: HTTPS, the `Secure` cookie, HSTS | Next |
 | — | *IsraJet IT's penetration test* (IT's; not a task of ours) | — |
-| 18 | **47** Stations: the admin sets each computer's lounge | Next |
-| 19 | **37** Entry details and the change panels | Next |
-| 20 | **38** The days-of-entries global rule and the operator's log window | Next |
-| 21 | **39** Admin: All entries | Next |
-| 22 | **40** Admin: Rules | Next |
-| 23 | **41** Admin: Clubs, Lounges, Approvers, Global rules | Next |
-| 24 | **43** Hebrew for the admin pages | Next |
-| 25 | **42** The full user guide for the redesign | Next |
+| 19 | **47** Stations: the admin sets each computer's lounge | Next |
+| 20 | **37** Entry details and the change panels | Next |
+| 21 | **38** The days-of-entries global rule and the operator's log window | Next |
+| 22 | **39** Admin: All entries | Next |
+| 23 | **40** Admin: Rules | Next |
+| 24 | **41** Admin: Clubs, Lounges, Approvers, Global rules | Next |
+| 25 | **43** Hebrew for the admin pages | Next |
+| 26 | **42** The full user guide for the redesign | Next |
 | — | **50** Fix the npm audit findings | Done (PR #6) |
 | — | **51** Containers as non-root; no version headers | Superseded (by 53 and 54) |
 | — | **45** Re-entry after a flight delay (already-entered pass) | Done (PR #4) |
@@ -54,7 +56,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 
 **Security first (Mark, 2026-11-17):** every item of IT's security assessment that is ours comes before IT's penetration test, and the UI redesign (37–43, 42) after it, since IsraJet doesn't need its features to go live.
 
-**How every task runs** (the full rules are in CLAUDE.md and the dev-style files): one task = one branch off `staging` = one PR. Plan first and wait for Mark's OK. Server first, then client, with a review stop after each. Store changes go through `store-test-writer`, user-visible changes through `user-guide-writer`, DEPLOY.md changes in the same commit and ARCHITECTURE.md in the paired ops commit (`/commit`) when the task touches them. Mark runs `db:generate` and `db:migrate` himself. `/verify` before handing over. Commit only after his go.
+**How every task runs** (the full rules are in CLAUDE.md and the dev-style files): one task = one branch off `staging` = one PR. Plan first and wait for Mark's OK. Server first, then client, with a review stop after each. Store changes go through `store-test-writer`, user-visible changes through `user-guide-writer`, DEPLOY.md changes in the same commit and ARCHITECTURE.md in the paired ops commit (`/commit`) when the task touches them. Mark runs `db:generate` and `db:migrate` himself; the agent runs them only when he explicitly allows it for that task, on the local databases. `/verify` before handing over. Commit only after his go.
 
 ---
 
@@ -246,21 +248,32 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Done when:** an unauthenticated request to any `/api/*` except `/health` and the auth routes is a 401; anyone can register and log in as an operator; a user Mark makes admin sees the admin pages; an operator can't reach an admin page and gets 403 from the admin endpoints.
 
 ### 48. A maximum session length, with a warning before the logout (small–medium, one migration) — after 46
-**Status:** Next
+**Status:** Done (PR #13)
 **Why:** Mark (2026-10-31). Task 15 ends a session only after a day without use, so a working desk is never logged out, but a session in daily use never ends either, and its cookie lasts a year. A fixed maximum (a forced re-login every few days) limits how long a copied cookie works. It must never break a scan, so the desk is warned ahead and re-logs in at a moment it chooses.
 **Decided (Mark, 2026-10-31):**
 - **Two limits:** the day-without-use limit stays as it is, and every session also ends a fixed time after login, used or not (`sessions.max_expires_at`, set at login and never renewed). The cookie lasts as long as that maximum, not a year.
 - **A warning before the fixed end:** `GET /api/auth/me` (and login) returns when the session ends; the client keeps a timer and, shortly before, opens a pop-up ("You'll be logged out at 14:00") with **Log in again now**, which asks for the password in the pop-up itself and keeps the screen and any scan in progress.
-**Still open:** the maximum (recommended: 7 days) and when the warning opens (recommended: 30 minutes before, again at 5); whether the maximum is an admin setting (a global rule) or a constant (recommended: a constant until IsraJet asks); what the pop-up does if it is ignored (recommended: the logout happens, and the login page keeps the operator's lounge).
+**Decided (Mark, 2026-11-23):**
+- **The maximum is 12 hours (one shift)**, a constant in the code next to the day-without-use limit, not an admin setting, until IsraJet asks.
+- **The warning opens 30 minutes before the end, and again at 5.** Its **Log in again now** asks only for the password and lets only the same user continue; someone else logs out and in the normal way, so nobody takes over another person's screen.
+- **If the warning is ignored,** the logout happens at the end time, and the login page keeps the station's lounge.
+- **Sessions open at the deploy** get the maximum counted from their login (the migration fills `max_expires_at` from `created_at`), so a session older than 12 hours ends at once.
+- **Built straight through** while Mark is away: the server, then the client, in one PR, reviewed later. Mark allowed the agent to run this task's migration on the local database.
 **Done when:** a session ends at its maximum even while in use, the desk is warned before it, and re-logging in from the warning loses nothing on screen.
 
 ### 46. Who did it: the user on every entry and change (small–medium, one migration) — after 55
-**Status:** Next
+**Status:** Done (PR #12)
 **Why:** carried from the old task 15: once people log in, each entry should say who logged it.
 **With the audit log (55):** the audit log already records who changed each entry. Planning settles what each one holds: the log is the record of events for IT, and this task puts the user on the entry itself, for the screen and the export.
 **Decided (from the post-POC plan):** `entries.created_by_user_id` (→ `users.id`, who scanned), set by the server from the session on every scan, guest, exception and re-entry; the user on an exceptional approval is who logged it, distinct from `approver_name` (who authorised it). Shown in the entry details and the export.
-**Still open:** whether a modification in place (move, rescan, void, quantity) also records its user (`modified_by_user_id`), or that waits for an audit trail.
-**Done when:** every new entry records who created it, and the details and the export show it.
+**Decided (Mark, 2026-11-23):**
+- **Who modified it too:** `entries.modified_by_user_id` (→ `users.id`), set with `modified_at` by every change in place (move, rescan, exception, void, quantity, and the guests a change touches): the last person who changed it. The full history is the audit log (55).
+- **Ids stored, names read:** both columns hold the user's id and the username is read on every read, so a rename shows on old entries. Users are never deleted, so the id always resolves.
+- **The export** gets `created_by_user_id`, `created_by`, `modified_by_user_id` and `modified_by`, like the lounge and club columns.
+- **On screen, only who created it**, in the entry details window (both roles). Who modified it is in the export only. No column in the entries table and no filter by user.
+- **Entries from before logins** have neither: empty in the export, a dash in the window.
+- **Built straight through** while Mark is away: the server, then the client, as two commits in one PR, reviewed later. The agent runs the migration on the local database.
+**Done when:** every new entry records who created it and every change in place who made it; the details window shows the creator and the export shows both.
 
 ### 47. Stations: the admin sets each computer's lounge (medium) — after the pen test
 **Status:** Next
@@ -286,7 +299,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 
 ### 18. Production deployment to the on-prem machines: the app server (large) — after 48
 **Status:** Next
-**Decided (Mark, 2026-11-17): an image registry, GitHub's container registry (`ghcr.io`), private.** Today the images are built on the app VM from the code. With the registry, the pipeline builds each image once, the security scans (56) check it, and the pipeline pushes it with a tag; the app VM pulls that exact image, so the image scanned is the image that runs, and a rollback runs the previous tag. The app VM needs no build tools or source code. The registry belongs to the GitHub repository, so it moves to IsraJet with it. **Still open:** check that the app VM can reach `ghcr.io` (it already downloads base images and npm packages to build today), and how it authenticates (a read-only pull token in a file not in git).
+**No image registry for now (Mark, 2026-11-23; a private `ghcr.io` registry was decided on 2026-11-17):** the app VM keeps building the images from the code, as today, and a rollback rebuilds the previous release. The registry is in the backlog (why: DECISIONS.md, 2026-11-23).
 **Decided (carried over):** one compose file per VM. The DB VM is task 44 (its own repository, its roles and secure access); this task is the app VM, connecting with the runtime role task 44 creates. This task adds the app VM's `deploy/app/docker-compose.app.yml` (`api` + `web`, no `pg`, `DATABASE_URL` to `192.168.1.1:5432` from an env file not in git, pinned image tags, `restart: unless-stopped`, log rotation, nginx serving the client and proxying `/api`), retires the demo compose and its seed-on-start on APP.Layam, adds a GitHub Actions job over the VPN (Mark, 2026-10-25: the remaining screens, 37 on, are shipped through it, so it is tested many times before go-live) that runs `db:migrate` before switching traffic and can roll back to the previous tag, and a smoke check after deploy. A test deployment already runs; DEPLOY.md should record it. Backups are the DBA's (DEPLOY.md §Backups).
 **Done when:** a fresh app VM goes from zero to serving with one command, and a rollback is one command.
 
@@ -351,7 +364,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Done when:** every response through nginx carries the headers and names no software version, the API sends no CORS header, a write to `/api/` with a foreign `Origin` gets a 403 while the app's own pages and a request without `Origin` work, and every screen works with the CSP on.
 
 ### 54. Hardened containers: non-root, production-only images, read-only, health checks (medium, deployment) — after 53
-**Status:** Next
+**Status:** Done (PR #10)
 **Why:** IT's security assessment: hardening the containers (High; the part inside the containers, while the app server itself is IT's), production-only images (Medium), and the health checks IT's monitoring will watch. It takes over 51's non-root user.
 **Decided (Mark, 2026-11-17):**
 - **Multi-stage builds:** the API's final image holds only the compiled code and the production packages, with no dev dependencies, tests or `tsx`. The web image already works this way.
@@ -359,31 +372,53 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 - **In the compose file:** a read-only filesystem where possible (with small writable temporary folders where a process needs one), every Linux capability dropped unless one is needed, `no-new-privileges`, and a Docker health check for each service.
 - **No registry here:** the images are still built on the app VM (the registry is 18's).
 **The hard part:** the migrations run at container start through `tsx` (a dev tool), and so do the scripts DEPLOY.md runs by hand (the one-time seed, `db:lock`, `user:create-admin`). Without `tsx` they must run from the compiled code.
-**Still open:** compile the scripts with the server build (recommended) or keep a separate tools image; for nginx, the unprivileged image listening on a high port inside the container (recommended) or keep port 80 with one capability.
+**Decided (Mark, 2026-11-21):**
+- **The scripts run from the compiled code.** They already compile with the server (they are under `src/`); the build copies in the SQL migrations and `rules.json`. The image has no npm (it can't write its logs on a read-only filesystem, and its scripts call `tsx`), so DEPLOY.md and the README run `node dist/…`; development keeps `npm run …`.
+- **nginx: the unprivileged image**, listening on 8080 inside the container (still 3000 outside), with no capability at all.
+- **Docker's log size limit here:** 10 MB × 5 files per container.
+- **IsraJet collects the logs with Sophos MDR**, an agent IT installs on the app VM, outside the containers. Nothing here stands in its way: it reads Docker's log files on the VM, and if IT prefers syslog or journald, that is one line in the compose file.
+- **One stop** (no screen changes).
 **Touch:** `server/Dockerfile`, `client/Dockerfile`, `client/nginx.conf` (if the port changes), `docker-compose.yml`, the server's build and scripts, DEPLOY.md (every command checked against the new images). A redeploy (Mark).
 **Done when:** `docker compose exec api whoami` is not root; the API image has no dev dependencies; the containers run read-only with no extra privileges; both report healthy; the migrations still run on start; and every DEPLOY.md command works with the new images.
 
 ### 55. The security audit log (medium) — after 54
-**Status:** Next
+**Status:** Done (PR #11)
 **Why:** IT's security assessment: security audit logging (High), and recording each CSV export (part of export governance, Medium).
 **Decided (Mark, 2026-11-17):**
 - **Structured log lines (JSON) on the API's output**, which Docker keeps and IT can collect into their own log system. Each line holds the time, the event, the user, the client address and the outcome.
 - **The events:** login success and failure (and a lock, from 52), logout, every change on the Users page (create, rename, role, deactivate, reactivate, password reset) and a user's own password change, each CSV export (its filters and row count), and the entry changes (move, rescan, exception, void, quantity).
 - **Never in the log:** passwords, session tokens, or the raw barcode (personal data).
-**Still open:** whether the admin's changes to rules, lounges, clubs, approvers and global rules are logged too (recommended: yes, the same way); a database table and a screen for the log (recommended: not now; the lines first, a screen if IsraJet asks); log rotation on the app VM (Docker's log size limit, here or in 54).
+**Decided (Mark, 2026-11-22):**
+- **The admin's changes to rules, lounges, clubs, approvers and global rules are logged too**, the same way: they decide who gets in.
+- **No database table and no screen for now:** the lines go to IsraJet's log system; a screen if IsraJet asks.
+- **Log rotation is 54's** (10 MB × 5 per container). IsraJet collects the logs with Sophos MDR on the app VM (Mark, 2026-11-21); how its agent reads them (Docker's files or syslog) is IT's answer.
+- **Server only, one stop** (nothing on screen changes).
 **Touch:** server: one small logging module used by the services, integration tests that each event writes its line and nothing secret; DEPLOY.md (where the logs are and how IT collects them); ARCHITECTURE.
 **Done when:** every listed event writes one line saying who did what, when and from where; nothing secret or personal is logged; tests prove each event.
 
-### 56. Security scans in the pipeline, and the release report (small–medium, CI) — after 18
-**Status:** Next
+### 56. Security scans in the pipeline, and the release report (medium, CI) — after 58, before 18 (moved ahead of 18: Mark, 2026-11-23)
+**Status:** Done (PR #16)
 **Why:** IT's security assessment: the dependency review and the container vulnerability assessment (both High). The response to IT proposed a report with every release, instead of one check by hand.
 **Decided (Mark, 2026-11-17):**
-- **In GitHub Actions, on every release:** `npm audit --omit=dev` for the server and the client; a Trivy scan of the two images the pipeline (18) pushes to the registry; an SBOM (the list of components and versions) for each image; the test results.
+- **In GitHub Actions, on every release:** `npm audit --omit=dev` for the server and the client; a Trivy scan of the two images, built by the pipeline from the release's commit (no registry: Mark, 2026-11-23); an SBOM (the list of components and versions) for each image; the test results.
 - **The report is kept with each release**, as the workflow's artifact, ready to hand to IT.
 - **A High or Critical finding stops the release** unless IT accepts it formally.
+**Decided (Mark, 2026-11-23, from his reference workflow; details may change later):**
+- **The fast gates run on every PR, like the tests:** Semgrep (named rule sets, not `--config auto`; only `ERROR` fails), `npm audit --omit=dev --audit-level=high` for the server and the client (the dev packages reported, not failing), gitleaks (secrets in the code and its history), zizmor (unsafe patterns in the workflows).
+- **The release is a push to `main`:** the tests and the same gates again on that exact commit, then both images built, Trivy on each (High and Critical fail, unfixed ignored), an SBOM of each (CycloneDX, from Trivy), and a ZAP baseline scan of the running stack (report-only at first). The release is tagged `vYYYY.MM.DD` (Israel's date; `.2`, `.3` for more that day) by the release job, only when everything passed; the deploy (18) will start only from a tagged commit.
+- **The report, kept as the run's artifact for 400 days** (the most a private repo allows), also on a failed release (marked FAILED, untagged), so the reason is there: a summary (on the run's page and as a file) with the verdict, the tag, commit and date, each check with pass or fail and its findings per severity, every failing finding (what, where, severity, the fixed version), the findings IT accepted, the ZAP alerts, and the release notes (the commits since the previous tag); then each scanner's own output and the SBOMs, for IT.
+- **A weekly scheduled scan** of the current images (and on demand), so a new CVE is seen before a release meets it.
+- **A finding IT accepts** goes into `.trivyignore.yaml` with its reason and an end date.
+- **Pinned supply chain:** every action and the scanners' images by full commit SHA or digest (the March 2026 attack rewrote trivy-action's tags); the base images in both Dockerfiles by digest, so the scanned image is the one the app VM builds from that commit; Dependabot (alerts, security updates, and version updates for npm, Docker and the actions, waiting a few days after each release of a package) keeps the pins current. Workflows get a read-only token by default; only the release job writes (its tag).
+- **The scan jobs install nothing** (`npm audit` reads the lockfile; the scanners run from pinned images), so no package's install script runs there (the 2025 npm worms spread through them).
+- **Not taken from the reference:** the registry push and the GitOps update (no registry, no Argo), and the conventional-commit version bump (our messages are sentences).
+- **Enforcing the gate on GitHub:** GitHub Pro on Mark's account, so the PR checks can be required (Mark sets it up); the release gate holds either way.
+**Decided (Mark, 2026-11-23, after the first ZAP run):**
+- **The cross-origin isolation headers are added** on nginx (`Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Embedder-Policy: require-corp`, `Cross-Origin-Resource-Policy: same-origin`), which 53 had left out; ZAP flagged them, and JetLog loads nothing from another address, so they cost nothing.
+- **ZAP's app waits for its database through compose** (the API `depends_on` the database being healthy, in a small file of the ZAP job's own), not through the order of the start commands.
 **Still open:** IT's answer: is this report enough, or will they run their own tools as well, and which severity blocks a release.
-**Touch:** `.github/workflows/`, DEPLOY.md (where the report is).
-**Done when:** every release has its report, and a High or Critical finding fails the pipeline.
+**Touch:** `.github/workflows/` (the PR gates, the release, the schedule), `.github/dependabot.yml`, `.trivyignore.yaml`, the Dockerfiles (digests), the Semgrep config, DEPLOY.md (where the report is and how to read it), README (the checks).
+**Done when:** every PR runs the fast gates; every push to `main` produces the report or fails on a High or Critical finding; the weekly scan runs; every action and image is pinned.
 
 ### 57. TLS: HTTPS, the `Secure` cookie, HSTS (small, deployment) — when IT delivers the certificate
 **Status:** Next (waiting for IT's host name and certificate)
@@ -393,17 +428,44 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Touch:** `client/nginx.conf`, `docker-compose.yml` (port 443, the certificate files mounted, not in git), the cookie options in `server/src/controllers/auth.ts`, DEPLOY.md (installing and renewing the certificate). A redeploy (Mark).
 **Done when:** JetLog is served over HTTPS at its host name, plain HTTP redirects to it, the session cookie carries `Secure`, and HSTS is sent.
 
-### 31. Length limits on every free-text column (small–medium, one migration) — after 56, before the pen test
-**Status:** Next
+### 31. Length limits on every free-text column (small–medium, one migration) — after 48, before the pen test (moved ahead of 56: Mark, 2026-11-23)
+**Status:** Done (PR #14)
 **Before the pen test (Mark, 2026-11-17):** not in IT's assessment, but pen testers send oversized values.
 **Why:** Mark (2026-10-21). Many `text` columns have no length limit, so one request can store an arbitrarily long string (up to Express's 100 KB body limit; 3 MB on the rules import), bloating the table, the export and the screen. Task 29 already caps a rule's description and comments at 2,000 characters.
 **Decided (Mark, 2026-10-21):** free-text columns get a maximum length, enforced twice: by the code first (a 400 with a clear message, or an invalid import row), and by the database as the last guard (`varchar(n)`). The limits are defined once and used by both, like `EXCEPTION_MAX_CHARS` and `RULE_TEXT_MAX_CHARS`. It is about size, not injection: Drizzle already sends every value as a parameter.
-**Still open (recommendations to confirm with Mark):**
-- **Which columns**, by risk: `entries.raw_barcode` (the only column filled from an untrusted source; cap around 1,000); the admin free text (`clubs.code`/`description`, `lounges.code`/`description`, `approvers.name`/`company`, `global_rules.value`) and their copies on `entries`; the columns the code derives (generously, or left out for a smaller migration).
-- **An over-long scan:** refused with a 400 and nothing logged, rather than stored cut short.
-- **The limits:** club and lounge code 50, descriptions 2,000, approver name and company 200, global-rule value 1,000.
-**Touch:** server (`db/schema.ts`, the constants, validation in the clubs, lounges, approvers, global-rules and scan endpoints, integration tests); before migrating, a query per column confirms no existing value is longer than its limit. Client: `maxLength` on the matching fields. Docs: ARCHITECTURE, DEPLOY, CLAUDE.md, USER_GUIDE, a `/decision`.
+**Decided (Mark, 2026-11-23):**
+- **The scanned barcode:** at most 1,000 characters, on the scan, the club question, the rescan and the re-entry (a real pass is a few hundred at most). A longer one is refused with a 400 and nothing is logged. The desk checks it before sending, so the operator reads the message in their language.
+- **A rule's carrier, class, frequent flyer and company field:** at most 10 characters each, in the editor and the CSV import (an invalid row), far above any real code.
+- **The limits the code already has are kept** (club code 50, lounge code 10, club and lounge descriptions 500, approver name and company 100, username 50) instead of the draft numbers; the global-rule value gets 1,000. Each limit is defined once, in one module, shared by the check and the column.
+- **The database guard:** `varchar(n)` on those columns, plus `entries.approver_name` and `voided_by` (the approver name's 100) and `login_failures.username` (the username's 50). The columns the server fills itself (hashes, rule keys, the fields parsed from the barcode, `locked_by`) stay `text`: the barcode cap bounds them.
+- **Counted in characters, as Postgres counts a varchar,** so the check and the column always agree, Hebrew included.
+- **No length limit on the scan box itself,** so a scan is never cut short silently; the other fields get the matching `maxLength`.
+- **Production:** DEPLOY.md gets a check query per column, run before migrating; a too-long value stops the migration with nothing changed.
+- **Migration:** the agent runs `db:generate` and `db:migrate` on the dev database for this task (Mark, 2026-11-23), reporting the row counts.
+**Touch:** server (`db/schema.ts`, the limits module, the clubs, lounges, approvers, global-rules, rules and scan validation, integration tests). Client: `maxLength` on the matching fields, the scan length check. Docs: ARCHITECTURE, DEPLOY, CLAUDE.md, USER_GUIDE.
 **Done when:** no chosen column accepts more than its limit, in the code or in the database, and an over-long value is refused with a clear message, writing nothing.
+
+### 58. Rate limits on nginx, against a flood (small, nginx only) — after 31, before the pen test
+**Status:** Done (PR #15)
+**Why:** Mark (2026-11-23). Pen testers send floods of requests from one address; nothing limited the rate except the API's failed-login count. nginx is the only way in and refuses cheaply, before the Node server or the database does any work.
+**Decided (Mark, 2026-11-23):**
+- **At nginx, per address and for everyone together**, plus a tighter count on the login on top of the API's failed-login limit (which stays: only the API knows usernames).
+- **Generous: only an attack meets them.** The desks and the admins send a few requests a second at their busiest, even if they all reach nginx from one address. 50 a second per address with a burst of 200; 200 a second for everyone with a burst of 400; the login 2 a second per address with a burst of 20; 100 open connections per address. A slow sender is cut off after 10 seconds of silence.
+- **A refusal is a 429 in the API's JSON envelope**, logged as a warning in nginx's error log (on Docker's output, so IT's collector reads it). No `Retry-After`: adding a header there would drop the security headers, and the wait is a second.
+- **The client is not changed:** it shows the server's words, "Too many requests", which normal work never sees.
+**Touch:** `client/nginx.conf`, DEPLOY.md (a check after a deploy), USER_GUIDE, ARCHITECTURE.
+**Done when:** a flood from one address, from many, and on the login is refused with a 429 while normal use is never refused, checked in the running app.
+
+### 59. Server errors never show their text; ids checked against the column (small, server only) — after 56, before the pen test
+**Status:** Done (PR #17)
+**Why:** A review before the pen test: an unexpected error answered 500 with its own text, in production too, and left no trace in the log. An id too large for the database's `integer` column (e.g. `/api/entries/99999999999`) made the database refuse the query, and Drizzle's error text carries the query and its values: the answer showed the SQL with every column of the table. Reproduced on the entries log, an entry, a club image and a lounge update (any logged-in user; the pen testers get accounts).
+**Decided (Mark, 2026-11-23):**
+- **An unexpected error answers only `Server Error`** (500); the errors the code raises on purpose (`ErrorResponse`, a bad barcode, a bad body or upload) keep their messages.
+- **Every unexpected error writes one line on the API's output** (`"type":"error"`, beside the audit lines, so IsraJet's log collector sees it): when, the request (method, path), the user, the error's kind, and for a database error its code and the table, column or constraint, with where in the code it happened. **Never its message or the query's values**, which can hold a barcode or a search; the same rule as the audit log. Development also prints the full error, as before. The export's failure in the middle of a download writes the same line.
+- **An id above the column's maximum (2,147,483,647) is refused with a 400**, defined once and used by every id the API reads: path ids, ids in a body, the entries filters, the log's cursor.
+- **Tests:** the id check test-first (unit), the line's fields (unit, nothing secret), and integration: a huge id is a 400, an unexpected error is `Server Error` with its line written.
+**Touch:** server only: a pure `domain/` module for ids and one for the error line, `middleware/errorHandler.ts`, the controllers' id parsers, `domain/entryFilters.ts`, `domain/entriesPaging.ts`, the export's catch; ARCHITECTURE (the error path); DEPLOY.md if it names the log lines.
+**Done when:** no response carries an unexpected error's text, every unexpected error leaves one safe line in the log, and a huge id gets a 400 everywhere.
 
 ### 45. Re-entry after a flight delay: a pass that already entered (small, one migration) — Mark to place in the order
 **Status:** Done (PR #4)

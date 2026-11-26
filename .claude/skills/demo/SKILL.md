@@ -8,7 +8,7 @@ The demo stack is the root `docker-compose.yml`: `pg` (Postgres 18.6, commented 
 ## Steps
 
 1. `docker compose up --build -d` from the repo root. First build takes a few minutes — that's normal.
-2. Wait for the API through nginx: poll `http://localhost:3000/api/health` (curl, up to ~90s; the api container migrates before listening). If it never comes up, show `docker compose logs api --tail 50` and stop. On an empty database, seed it and make an admin (`docker compose run --rm api npm run db:seed`, then `docker compose run --rm api npm run user:create-admin -- --username admin`, which asks the user for the password).
+2. Wait for the API through nginx: poll `http://localhost:3000/api/health` (curl, up to ~90s; the api container migrates before listening). If it never comes up, show `docker compose logs api --tail 50` and stop. On an empty database, seed it and make an admin (`docker compose run --rm api node dist/db/seed.js`, then `docker compose run --rm api node dist/scripts/createAdmin.js --username admin`, which asks the user for the password; the image has no npm).
 3. Confirm the UI answers on `http://localhost:3000` and tell the user to open it.
 4. Hand the user a smoke script:
    - First pick the station's lounge in the header (`A` is seeded) — scanning is blocked until one is set.
