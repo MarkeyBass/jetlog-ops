@@ -31,7 +31,7 @@ The summary of each task's `**Status:**` line; keep the two in agreement.
 | 16 | **58** Rate limits on nginx, against a flood | Done (PR #15) |
 | 17 | **56** Security scans in the pipeline, and the release report | Done (PR #16) |
 | 18 | **59** Server errors never show their text; ids checked against the column | Done (PR #17) |
-| when the certificate arrives | **57** TLS: HTTPS, the `Secure` cookie, HSTS | In progress |
+| when the certificate arrives | **57** TLS: HTTPS, the `Secure` cookie, HSTS | Done (PR #19) |
 | — | *IsraJet IT's penetration test* (IT's; not a task of ours) | — |
 | after the pen test | **18** Production deployment (the app server), automated | Next |
 | 19 | **47** Stations: the admin sets each computer's lounge | Next |
@@ -422,7 +422,7 @@ These hold for tasks 33–42 unless a task's own "Decided" list says otherwise.
 **Done when:** every PR runs the fast gates; every push to `main` produces the report or fails on a High or Critical finding; the weekly scan runs; every action and image is pinned.
 
 ### 57. TLS: HTTPS, the `Secure` cookie, HSTS (small, deployment) — when the certificate arrives
-**Status:** In progress (`feature/task-57-https`; the certificate arrived 2026-11-26)
+**Status:** Done (PR #19; the runbook's certificate fix in PR #20). The certificate (RapidSSL, for `jetlog.jetex.co.il`, until 2027-06-10) is installed on the app VM.
 **Why:** IT's security assessment: HTTPS/TLS (High), and the `Secure` session cookie its assessment result names.
 **Decided (Mark, 2026-11-23; replaces the 2026-11-17 split, where IT would decide where TLS ends):**
 - **Mark manages HTTPS; IT only hands over the certificate** (for a host name in IsraJet's domain and for the address `192.168.0.1`, with the host name's internal DNS record, signed by a CA every desk computer trusts), and decides how the key is made and delivered. The request to IT is short: what is needed, not how it is done. TLS ends on JetLog's own nginx on the app VM; there is no IT reverse proxy.
